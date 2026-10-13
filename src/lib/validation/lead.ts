@@ -1,6 +1,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 import { z } from "zod";
 
+import type { LeadSummary } from "@/lib/notifications/format";
 import {
   ACCIDENT,
   BODY_TYPES,
@@ -165,8 +166,8 @@ export const EMPTY_LEAD_FORM = {
 
 const PS_TO_KW = 0.73549875;
 
-/** Maps parsed form input to the `leads` table columns. */
-export function toLeadRow(input: LeadInput, now: Date) {
+/** Maps parsed form input to what the notification message shows. */
+export function toLeadSummary(input: LeadInput): LeadSummary {
   const powerKw =
     input.power === null
       ? null
@@ -200,6 +201,5 @@ export function toLeadRow(input: LeadInput, now: Date) {
     phone: input.phone,
     email: input.email,
     contactMethod: input.contactMethod,
-    consentAt: now,
   };
 }

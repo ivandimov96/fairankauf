@@ -50,6 +50,22 @@ describe("formatLeadMessage", () => {
     );
   });
 
+  it("adds the optional details, defects and email when given", () => {
+    const msg = formatLeadMessage({
+      ...lead,
+      bodyType: "Kombi",
+      huDueYear: 2027,
+      huDueMonth: 3,
+      serviceBook: "TEILWEISE",
+      previousOwners: 2,
+      defects: "Kratzer hinten links",
+      email: "erika@example.de",
+    });
+    expect(msg).toContain("Fahrbereit: Ja\nKarosserie: Kombi · HU: 03/2027 · Scheckheft: Teilweise · Vorbesitzer: 2\n");
+    expect(msg).toContain("Mängel: Kratzer hinten links\nPreisvorstellung");
+    expect(msg).toContain("(bevorzugt: WhatsApp)\n✉️ erika@example.de\n💬");
+  });
+
   it("handles missing optional values", () => {
     const msg = formatLeadMessage(
       { ...lead, firstRegMonth: null, powerKw: null, desiredPriceCents: null, drivable: false },
@@ -182,5 +198,24 @@ describe("notificationConfig", () => {
     expect(() =>
       notificationConfig({ NOTIFICATION_PROVIDER: "callmebot", NOTIFY_PHONE: "0151 56041400", CALLMEBOT_API_KEY: "k" }),
     ).toThrow(/E\.164/);
+  });
+});
+
+describe("sendLeadNotification", () => {
+  it("retries and then throws the provider's error", async () => {
+    vi.resetModules();
+    vi.stubEnv("NOTIFICATION_PROVIDER", "callmebot");
+    vi.stubEnv("NOTIFY_PHONE", "+4915156041400");
+    vi.stubEnv("CALLMEBOT_API_KEY", "k");
+    const fetchMock = vi.fn().mockImplementation(async () => new Response("APIKey is invalid"));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const { sendLeadNotification } = await import("@/lib/notifications");
+      await expect(sendLeadNotification(lead, [0, 0])).rejects.toThrow(/CallMeBot 200: APIKey is invalid/);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
   });
 });

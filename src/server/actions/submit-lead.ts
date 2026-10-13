@@ -1,10 +1,9 @@
 "use server";
 
-import { db, schema } from "@/lib/db";
-import { notifyNewLead } from "@/lib/notifications";
-import { clientIp, clientIpHash, rateLimit } from "@/lib/rate-limit";
+import { sendLeadNotification } from "@/lib/notifications";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { turnstileEnabled, verifyTurnstile } from "@/lib/turnstile";
-import { leadSchema, toLeadRow } from "@/lib/validation/lead";
+import { leadSchema, toLeadSummary } from "@/lib/validation/lead";
 
 export type SubmitLeadResult =
   | { ok: true }
@@ -34,16 +33,11 @@ export async function submitLead(values: unknown, meta: SubmitMeta = {}): Promis
     }
   }
 
-  try {
-    if (!(await rateLimit(`lead:${await clientIpHash()}`, MAX_PER_HOUR, 60 * 60))) {
-      return {
-        ok: false,
-        message: "Sie haben bereits mehrere Anfragen gesendet. Bitte versuchen Sie es später erneut.",
-      };
-    }
-  } catch (error) {
-    // The rate limit must never block a real seller because of a database hiccup.
-    console.error("submitLead: rate limit check failed", error);
+  if (!rateLimit(`lead:${await clientIp()}`, MAX_PER_HOUR, 60 * 60)) {
+    return {
+      ok: false,
+      message: "Sie haben bereits mehrere Anfragen gesendet. Bitte versuchen Sie es später erneut.",
+    };
   }
 
   // 2. Validate
@@ -57,24 +51,16 @@ export async function submitLead(values: unknown, meta: SubmitMeta = {}): Promis
     return { ok: false, message: "Bitte prüfen Sie Ihre Angaben.", fieldErrors };
   }
 
-  // 3. Save
-  let leadId: string;
+  // 3. Send. WhatsApp is the only place the lead goes (no database), so if sending
+  // fails the seller must know: their entries stay in the form and they can retry.
   try {
-    const [lead] = await db()
-      .insert(schema.leads)
-      .values(toLeadRow(parsed.data, new Date()))
-      .returning({ id: schema.leads.id });
-    leadId = lead!.id;
+    await sendLeadNotification(toLeadSummary(parsed.data));
   } catch (error) {
-    console.error("submitLead: insert failed", error);
+    console.error("submitLead: notification failed", error instanceof Error ? error.message : error);
     return {
       ok: false,
       message: "Das hat leider nicht geklappt. Bitte versuchen Sie es in einer Minute erneut.",
     };
   }
-
-  // 4. Notify. The lead is saved; a failed notification is recorded on the lead
-  // (and retried daily by /api/cron/retry-notifications), never shown to the seller.
-  await notifyNewLead(leadId);
   return { ok: true };
 }

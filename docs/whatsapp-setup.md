@@ -10,10 +10,10 @@ with `NOTIFICATION_PROVIDER`:
 | `telegram` | Official Telegram bot, free | **Easiest reliable option.** Set up in 5 minutes |
 | `whatsapp_cloud` | Official Meta WhatsApp Cloud API | Later, for a reliable official setup |
 
-WhatsApp is the only place you see leads; there is no admin website. The lead is still
-saved in the database first, so nothing is lost: each message is tried 3 times, and a
-daily job (07:00 UTC) re-sends any that still failed. You can always look up leads in the
-Neon console (Tables → leads).
+The message is the only place a lead exists: there is no database and no admin website.
+Each message is tried 3 times. If it still fails, the seller sees "please try again in a
+minute" and their entries stay in the form, so the lead is not silently lost. Keep the
+messages (don't delete the chat).
 
 ---
 
@@ -184,8 +184,8 @@ Redeploy and submit a test lead.
 
 ### Troubleshooting
 
-The exact error is stored on the lead (`notification_error` column, visible in the Neon
-console) and in the Vercel logs. Common ones:
+The exact error is in the Vercel logs (search for `submitLead`). Note that the template
+shows the main fields only; body type, HU, service book, defects and email are not in it. Common ones:
 
 | Error | Fix |
 |---|---|

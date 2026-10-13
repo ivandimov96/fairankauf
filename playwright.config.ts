@@ -21,5 +21,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    env: { NOTIFICATION_PROVIDER: "console" },
   },
 });

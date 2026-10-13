@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { leadSchema, toLeadRow, type LeadFormValues } from "@/lib/validation/lead";
+import { leadSchema, toLeadSummary, type LeadFormValues } from "@/lib/validation/lead";
 
 const valid: LeadFormValues = {
   brand: "Volkswagen",
@@ -106,25 +106,21 @@ describe("leadSchema", () => {
   });
 });
 
-describe("toLeadRow", () => {
-  const now = new Date("2026-10-13T12:00:00Z");
-
+describe("toLeadSummary", () => {
   it("converts PS to kW, euros to cents and splits the HU date", () => {
-    const row = toLeadRow(leadSchema.parse(valid), now);
+    const row = toLeadSummary(leadSchema.parse(valid));
     expect(row).toMatchObject({
       powerKw: 110,
       desiredPriceCents: 950_000,
       huDueYear: 2027,
       huDueMonth: 3,
       drivable: true,
-      consentAt: now,
     });
   });
 
   it("keeps kW as entered and leaves optional values null", () => {
-    const row = toLeadRow(
+    const row = toLeadSummary(
       leadSchema.parse({ ...valid, power: "85", powerUnit: "KW", huDue: "", desiredPrice: "", drivable: "NEIN" }),
-      now,
     );
     expect(row).toMatchObject({
       powerKw: 85,

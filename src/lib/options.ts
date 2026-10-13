@@ -1,5 +1,5 @@
 // Option lists for the lead form, shared by the client form, the Zod schema
-// and (later) the admin UI. Values match the Postgres enums in db/schema.ts.
+// and the notification message.
 
 export const BRANDS = [
   "Alfa Romeo",
