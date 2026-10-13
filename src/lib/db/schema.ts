@@ -1,6 +1,5 @@
 import {
   boolean,
-  date,
   index,
   integer,
   pgEnum,
@@ -14,19 +13,6 @@ import {
 
 // Money is always integer cents (`*Cents`). Timestamps are timestamptz (UTC).
 // Column names are camelCase in TS and snake_case in Postgres (casing: "snake_case").
-
-export const leadStatus = pgEnum("lead_status", [
-  "NEU",
-  "KONTAKTIERT",
-  "BESICHTIGUNG_GEPLANT",
-  "ANGEBOT_GEMACHT",
-  "GEKAUFT",
-  "IN_AUFBEREITUNG",
-  "INSERIERT",
-  "VERKAUFT",
-  "ABGELEHNT",
-  "VERLOREN",
-]);
 
 export const fuelType = pgEnum("fuel_type", [
   "BENZIN",
@@ -48,8 +34,6 @@ export const serviceBook = pgEnum("service_book", ["JA", "TEILWEISE", "NEIN"]);
 export const contactMethod = pgEnum("contact_method", ["ANRUF", "WHATSAPP", "EMAIL"]);
 
 export const notificationStatus = pgEnum("notification_status", ["PENDING", "SENT", "FAILED"]);
-
-export const marginType = pgEnum("margin_type", ["EUR", "PERCENT"]);
 
 const timestamps = {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -93,9 +77,7 @@ export const leads = pgTable(
     contactMethod: contactMethod().notNull(),
     consentAt: timestamp({ withTimezone: true }).notNull(),
 
-    // Pipeline
-    status: leadStatus().notNull().default("NEU"),
-    lostReason: text(),
+    // Notification (see lib/notifications)
     notificationStatus: notificationStatus().notNull().default("PENDING"),
     notificationError: text(),
 
@@ -105,91 +87,7 @@ export const leads = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [index().on(t.status, t.createdAt), index().on(t.createdAt)],
-);
-
-export const leadPhotos = pgTable(
-  "lead_photos",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    leadId: uuid()
-      .notNull()
-      .references(() => leads.id, { onDelete: "cascade" }),
-    url: text().notNull(),
-    pathname: text().notNull(), // Blob pathname, needed to delete the file
-    position: smallint().notNull(),
-    ...timestamps,
-  },
-  (t) => [index().on(t.leadId)],
-);
-
-export const statusHistory = pgTable(
-  "status_history",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    leadId: uuid()
-      .notNull()
-      .references(() => leads.id, { onDelete: "cascade" }),
-    fromStatus: leadStatus(),
-    toStatus: leadStatus().notNull(),
-    note: text(),
-    ...timestamps,
-  },
-  (t) => [index().on(t.leadId, t.createdAt)],
-);
-
-export const notes = pgTable(
-  "notes",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    leadId: uuid()
-      .notNull()
-      .references(() => leads.id, { onDelete: "cascade" }),
-    text: text().notNull(),
-    ...timestamps,
-  },
-  (t) => [index().on(t.leadId, t.createdAt)],
-);
-
-// 1:1 with leads, so keyed by leadId.
-export const deals = pgTable("deals", {
-  leadId: uuid()
-    .primaryKey()
-    .references(() => leads.id, { onDelete: "cascade" }),
-
-  // Calculator (estimates)
-  estMarketValueCents: integer(),
-  reconEstimateCents: integer(),
-  feesEstimateCents: integer(),
-  targetMarginType: marginType().notNull().default("EUR"),
-  targetMarginValue: integer(), // cents when EUR, basis points when PERCENT (1500 = 15 %)
-
-  // Actuals
-  purchasePriceCents: integer(),
-  purchaseDate: date({ mode: "string" }),
-  salePriceCents: integer(),
-  saleDate: date({ mode: "string" }),
-
-  ...timestamps,
-  updatedAt: timestamp({ withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
-
-export const dealCosts = pgTable(
-  "deal_costs",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    leadId: uuid()
-      .notNull()
-      .references(() => deals.leadId, { onDelete: "cascade" }),
-    description: text().notNull(),
-    amountCents: integer().notNull(),
-    date: date({ mode: "string" }).notNull(),
-    ...timestamps,
-  },
-  (t) => [index().on(t.leadId)],
+  (t) => [index().on(t.notificationStatus, t.createdAt), index().on(t.createdAt)],
 );
 
 // Fixed-window rate limiting that works across serverless instances.

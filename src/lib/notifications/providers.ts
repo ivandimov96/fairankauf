@@ -8,11 +8,11 @@ export const GRAPH_API_VERSION = "v23.0";
 
 type Fetch = typeof fetch;
 
-export function consoleProvider(appUrl: string, log: (msg: string) => void = console.log): NotificationProvider {
+export function consoleProvider(log: (msg: string) => void = console.log): NotificationProvider {
   return {
     name: "console",
     async sendNewLead(lead) {
-      log(`[notification:console]\n${formatLeadMessage(lead, appUrl)}`);
+      log(`[notification:console]\n${formatLeadMessage(lead)}`);
     },
   };
 }
@@ -20,7 +20,6 @@ export function consoleProvider(appUrl: string, log: (msg: string) => void = con
 /** Free CallMeBot API for personal WhatsApp notifications. https://www.callmebot.com */
 export function callmebotProvider(
   cfg: { phone: string; apiKey: string },
-  appUrl: string,
   fetchImpl: Fetch = fetch,
 ): NotificationProvider {
   return {
@@ -28,7 +27,7 @@ export function callmebotProvider(
     async sendNewLead(lead) {
       const url = new URL("https://api.callmebot.com/whatsapp.php");
       url.searchParams.set("phone", cfg.phone);
-      url.searchParams.set("text", formatLeadMessage(lead, appUrl));
+      url.searchParams.set("text", formatLeadMessage(lead));
       url.searchParams.set("apikey", cfg.apiKey);
 
       const res = await fetchImpl(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
@@ -77,26 +76,18 @@ export function cloudTemplatePayload(
         {
           type: "body",
           parameters: formatTemplateParams(lead).map((text) => ({ type: "text", text })),
-        },
-        {
-          // Dynamic URL button "Anfrage öffnen": base URL in the template ends with
-          // /admin/leads/ and this parameter supplies the lead id.
-          type: "button",
-          sub_type: "url",
-          index: "0",
-          parameters: [{ type: "text", text: lead.id }],
-        },
+        }
       ],
     },
   };
 }
 
-export function createProvider(cfg: NotificationConfig, appUrl: string): NotificationProvider {
+export function createProvider(cfg: NotificationConfig): NotificationProvider {
   switch (cfg.NOTIFICATION_PROVIDER) {
     case "console":
-      return consoleProvider(appUrl);
+      return consoleProvider();
     case "callmebot":
-      return callmebotProvider({ phone: cfg.NOTIFY_PHONE, apiKey: cfg.CALLMEBOT_API_KEY }, appUrl);
+      return callmebotProvider({ phone: cfg.NOTIFY_PHONE, apiKey: cfg.CALLMEBOT_API_KEY });
     case "whatsapp_cloud":
       return whatsappCloudProvider(
         {

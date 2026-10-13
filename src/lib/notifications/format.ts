@@ -4,7 +4,6 @@ import { formatPhone, waMeLink } from "@/lib/phone";
 
 /** The lead fields the notification needs (a subset of the `leads` row). */
 export type LeadSummary = {
-  id: string;
   brand: string;
   model: string;
   firstRegYear: number;
@@ -24,10 +23,6 @@ export type LeadSummary = {
   contactMethod: keyof typeof CONTACT_METHOD;
 };
 
-export function adminLeadUrl(appUrl: string, leadId: string) {
-  return `${appUrl.replace(/\/$/, "")}/admin/leads/${leadId}`;
-}
-
 function firstReg(lead: LeadSummary) {
   return lead.firstRegMonth
     ? `${String(lead.firstRegMonth).padStart(2, "0")}/${lead.firstRegYear}`
@@ -41,7 +36,7 @@ function price(lead: LeadSummary) {
 /**
  * Plain-text WhatsApp message (console + CallMeBot). WhatsApp renders *bold*.
  */
-export function formatLeadMessage(lead: LeadSummary, appUrl: string): string {
+export function formatLeadMessage(lead: LeadSummary): string {
   const power = lead.powerKw ? ` · ${lead.powerKw} kW` : "";
   return [
     `🚗 *Neue Anfrage: ${lead.brand} ${lead.model}*`,
@@ -54,8 +49,6 @@ export function formatLeadMessage(lead: LeadSummary, appUrl: string): string {
     `👤 ${lead.name}`,
     `📞 ${formatPhone(lead.phone)} (bevorzugt: ${CONTACT_METHOD[lead.contactMethod]})`,
     `💬 ${waMeLink(lead.phone)}`,
-    "",
-    `🔗 ${adminLeadUrl(appUrl, lead.id)}`,
   ].join("\n");
 }
 

@@ -21,14 +21,11 @@ export async function submitLead(values: unknown): Promise<SubmitLeadResult> {
 
   let leadId: string;
   try {
-    leadId = await db().transaction(async (tx) => {
-      const [lead] = await tx
-        .insert(schema.leads)
-        .values(toLeadRow(parsed.data, new Date()))
-        .returning({ id: schema.leads.id });
-      await tx.insert(schema.statusHistory).values({ leadId: lead!.id, toStatus: "NEU" });
-      return lead!.id;
-    });
+    const [lead] = await db()
+      .insert(schema.leads)
+      .values(toLeadRow(parsed.data, new Date()))
+      .returning({ id: schema.leads.id });
+    leadId = lead!.id;
   } catch (error) {
     console.error("submitLead: insert failed", error);
     return {
@@ -37,7 +34,8 @@ export async function submitLead(values: unknown): Promise<SubmitLeadResult> {
     };
   }
 
-  // The lead is saved; a failed notification is recorded on the lead, not shown to the seller.
+  // The lead is saved; a failed notification is recorded on the lead (and retried
+  // daily by /api/cron/retry-notifications), never shown to the seller.
   await notifyNewLead(leadId);
   return { ok: true };
 }

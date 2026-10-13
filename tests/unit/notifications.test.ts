@@ -11,7 +11,6 @@ import {
 } from "@/lib/notifications/providers";
 
 const lead: LeadSummary = {
-  id: "7d0f0f4e-2a51-4a59-9a8e-0c6a1b2c3d4e",
   brand: "Volkswagen",
   model: "Golf 1.4 TSI",
   firstRegYear: 2016,
@@ -31,11 +30,9 @@ const lead: LeadSummary = {
   contactMethod: "WHATSAPP",
 };
 
-const APP_URL = "https://fairankauf.de";
-
 describe("formatLeadMessage", () => {
-  it("contains every field Ivan needs, a wa.me link and the admin link", () => {
-    expect(formatLeadMessage(lead, APP_URL)).toBe(
+  it("contains every field Ivan needs and a wa.me link to the seller", () => {
+    expect(formatLeadMessage(lead)).toBe(
       [
         "🚗 *Neue Anfrage: Volkswagen Golf 1.4 TSI*",
         "EZ 05/2016 · 123.000 km",
@@ -47,8 +44,6 @@ describe("formatLeadMessage", () => {
         "👤 Erika Musterfrau",
         "📞 +49 1511 2345678 (bevorzugt: WhatsApp)",
         "💬 https://wa.me/4915112345678",
-        "",
-        "🔗 https://fairankauf.de/admin/leads/7d0f0f4e-2a51-4a59-9a8e-0c6a1b2c3d4e",
       ].join("\n"),
     );
   });
@@ -56,13 +51,11 @@ describe("formatLeadMessage", () => {
   it("handles missing optional values", () => {
     const msg = formatLeadMessage(
       { ...lead, firstRegMonth: null, powerKw: null, desiredPriceCents: null, drivable: false },
-      `${APP_URL}/`,
     );
     expect(msg).toContain("EZ 2016 · 123.000 km");
     expect(msg).toContain("Benzin · Manuell\n");
     expect(msg).toContain("Preisvorstellung: keine Angabe");
     expect(msg).toContain("Fahrbereit: Nein");
-    expect(msg).toContain("https://fairankauf.de/admin/leads/"); // no double slash
   });
 });
 
@@ -87,29 +80,29 @@ describe("formatTemplateParams", () => {
 describe("providers", () => {
   it("console logs the message", async () => {
     const log = vi.fn();
-    await consoleProvider(APP_URL, log).sendNewLead(lead);
+    await consoleProvider(log).sendNewLead(lead);
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Neue Anfrage: Volkswagen"));
   });
 
   it("callmebot calls the API with phone, text and key", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response("Message queued. You will receive it in a few seconds."));
-    await callmebotProvider({ phone: "+4915156041400", apiKey: "123456" }, APP_URL, fetchMock).sendNewLead(lead);
+    await callmebotProvider({ phone: "+4915156041400", apiKey: "123456" }, fetchMock).sendNewLead(lead);
 
     const url = fetchMock.mock.calls[0]![0] as URL;
     expect(url.origin + url.pathname).toBe("https://api.callmebot.com/whatsapp.php");
     expect(url.searchParams.get("phone")).toBe("+4915156041400");
     expect(url.searchParams.get("apikey")).toBe("123456");
-    expect(url.searchParams.get("text")).toBe(formatLeadMessage(lead, APP_URL));
+    expect(url.searchParams.get("text")).toBe(formatLeadMessage(lead));
   });
 
   it("callmebot throws on an error answer, even with HTTP 200", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response("<p>APIKey is invalid.</p>"));
     await expect(
-      callmebotProvider({ phone: "+4915156041400", apiKey: "x" }, APP_URL, fetchMock).sendNewLead(lead),
+      callmebotProvider({ phone: "+4915156041400", apiKey: "x" }, fetchMock).sendNewLead(lead),
     ).rejects.toThrow("CallMeBot 200: APIKey is invalid.");
   });
 
-  it("whatsapp_cloud posts the template with body params and the button's lead id", async () => {
+  it("whatsapp_cloud posts the template with the body parameters", async () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ messages: [{ id: "wamid.x" }] }));
     const cfg = { phone: "+4915156041400", token: "tok", phoneNumberId: "1234567890", template: "new_car_lead", lang: "de" };
     await whatsappCloudProvider(cfg, fetchMock).sendNewLead(lead);
@@ -125,7 +118,6 @@ describe("providers", () => {
         language: { code: "de" },
         components: [
           { type: "body", parameters: expect.arrayContaining([{ type: "text", text: "Volkswagen Golf 1.4 TSI" }]) },
-          { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: lead.id }] },
         ],
       },
     });

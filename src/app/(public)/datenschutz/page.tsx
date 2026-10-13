@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Datenschutzerklärung | FairAnkauf" };
 
 // PLACEHOLDER: replace with a complete privacy policy (e.g. generated with eRecht24)
-// before launch. It must name Vercel (hosting), Neon (database), Vercel Blob (photos),
+// before launch. It must name Vercel (hosting), Neon (database),
 // Cloudflare Turnstile (spam protection) and the WhatsApp notification provider.
 export default function DatenschutzPage() {
   return (
@@ -16,7 +16,7 @@ export default function DatenschutzPage() {
       <p className="mt-2">[Vorname Nachname], FairAnkauf, [Anschrift], [E-Mail-Adresse]</p>
       <h2 className="mt-8 text-xl font-semibold">2. Welche Daten wir verarbeiten</h2>
       <p className="mt-2">
-        Wenn Sie unser Formular ausfüllen, verarbeiten wir Ihre Angaben zum Fahrzeug, optional Fotos, Ihren
+        Wenn Sie unser Formular ausfüllen, verarbeiten wir Ihre Angaben zum Fahrzeug, Ihren
         Namen, Ihre Telefonnummer, optional Ihre E-Mail-Adresse sowie Postleitzahl und Ort, um Sie zu
         kontaktieren und Ihnen ein Angebot zu machen (Art. 6 Abs. 1 lit. a und b DSGVO).
       </p>
@@ -26,7 +26,7 @@ export default function DatenschutzPage() {
         [E-Mail-Adresse] genügt.
       </p>
       <h2 className="mt-8 text-xl font-semibold">4. Dienstleister</h2>
-      <p className="mt-2">[Hosting, Datenbank, Speicher für Fotos, Spamschutz, Benachrichtigungsdienst]</p>
+      <p className="mt-2">[Hosting, Datenbank, Spamschutz, Benachrichtigungsdienst]</p>
       <h2 className="mt-8 text-xl font-semibold">5. Ihre Rechte</h2>
       <p className="mt-2">
         Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,

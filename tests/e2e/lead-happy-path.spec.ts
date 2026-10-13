@@ -3,8 +3,7 @@ import { existsSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import postgres from "postgres";
 
-// Grows phase by phase into the full happy path:
-// fill the form → lead appears in admin → notification sent via the console provider.
+// Full happy path: fill the form → lead saved → notification sent via the console provider.
 
 if (!process.env.DATABASE_URL && existsSync(".env.local")) process.loadEnvFile(".env.local");
 
@@ -77,19 +76,14 @@ test("seller submits a car and the lead is saved", async ({ page }) => {
     expect(await page.evaluate(() => localStorage.getItem("fairankauf:lead-draft:v1"))).toBeNull();
 
     const [lead] = await sql`
-      select l.brand, l.mileage_km, l.power_kw, l.desired_price_cents, l.phone, l.status,
-             l.notification_status, count(h.id)::int as history
-      from leads l left join status_history h on h.lead_id = l.id
-      where l.phone = ${phoneE164}
-      group by l.id`;
+      select brand, mileage_km, power_kw, desired_price_cents, notification_status
+      from leads where phone = ${phoneE164}`;
     expect(lead).toMatchObject({
       brand: "Volkswagen",
       mileage_km: 123000,
       power_kw: 92,
       desired_price_cents: 950000,
-      status: "NEU",
       notification_status: "SENT", // console provider (NOTIFICATION_PROVIDER=console in .env.local)
-      history: 1,
     });
   } finally {
     await sql`delete from leads where phone = ${phoneE164}`;

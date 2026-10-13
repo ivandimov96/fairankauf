@@ -38,7 +38,6 @@ import { submitLead } from "@/server/actions/submit-lead";
 
 const STORAGE_KEY = "fairankauf:lead-draft:v1";
 
-// Step 3 (photos) is added in Phase 4.
 const STEPS = [
   { key: "basics", title: "Ihr Auto" },
   { key: "condition", title: "Zustand" },

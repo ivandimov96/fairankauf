@@ -9,8 +9,10 @@ with `NOTIFICATION_PROVIDER`:
 | `callmebot` | Free CallMeBot service | **Start here.** Set up in 2 minutes |
 | `whatsapp_cloud` | Official Meta WhatsApp Cloud API | Later, for a reliable official setup |
 
-The lead is always saved first. If sending fails, the lead is still there, it is marked
-"Benachrichtigung fehlgeschlagen" in the admin area and you can press "Erneut senden".
+WhatsApp is the only place you see leads; there is no admin website. The lead is still
+saved in the database first, so nothing is lost: each message is tried 3 times, and a
+daily job (07:00 UTC) re-sends any that still failed. You can always look up leads in the
+Neon console (Tables → leads).
 
 ---
 
@@ -55,11 +57,9 @@ Ort: 10115 Berlin
 👤 Erika Musterfrau
 📞 +49 1511 2345678 (bevorzugt: WhatsApp)
 💬 https://wa.me/4915112345678
-
-🔗 https://fairankauf.de/admin/leads/…
 ```
 
-Tap the 💬 link to write to the seller, tap the 🔗 link to open the lead.
+Tap the phone number to call, or the 💬 link to write to the seller on WhatsApp.
 
 ---
 
@@ -135,14 +135,7 @@ Meta asks for an example per variable. Use these:
 | {{8}} | +49 1511 2345678 (bevorzugt: WhatsApp) |
 | {{9}} | https://wa.me/4915112345678 |
 
-**Button**: add a **"Visit website"** (call-to-action) button:
-
-| Setting | Value |
-|---|---|
-| Button text | `Anfrage öffnen` |
-| URL type | **Dynamic** |
-| URL | `https://fairankauf.de/admin/leads/{{1}}` (use your real domain) |
-| Example | `https://fairankauf.de/admin/leads/7d0f0f4e-2a51-4a59-9a8e-0c6a1b2c3d4e` |
+Don't add buttons.
 
 Submit. Approval usually takes minutes, sometimes up to a day. The status must be
 **Active** before it works.
@@ -162,7 +155,8 @@ Redeploy and submit a test lead.
 
 ### Troubleshooting
 
-The exact error from Meta is stored on the lead and shown in the admin area. Common ones:
+The exact error is stored on the lead (`notification_error` column, visible in the Neon
+console) and in the Vercel logs. Common ones:
 
 | Error | Fix |
 |---|---|

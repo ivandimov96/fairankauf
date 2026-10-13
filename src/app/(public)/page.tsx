@@ -16,7 +16,7 @@ const STEPS = [
   {
     icon: ClipboardListIcon,
     title: "Daten eingeben",
-    text: "Beschreiben Sie Ihr Auto in wenigen Minuten. Fotos helfen, sind aber kein Muss.",
+    text: "Beschreiben Sie Ihr Auto in wenigen Minuten, ganz bequem am Handy.",
   },
   {
     icon: MessageCircleIcon,
