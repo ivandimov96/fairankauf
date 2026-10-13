@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftIcon, ArrowRightIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, LoaderCircleIcon, LockIcon } from "lucide-react";
 
 import { BrandPicker } from "@/components/form/brand-picker";
+import { clearDraft, loadDraft, saveDraft } from "@/components/form/draft";
 import { ChoiceGroup } from "@/components/form/choice-group";
 import { Field, describedBy } from "@/components/form/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { TURNSTILE_SITE_KEY, Turnstile } from "@/components/form/turnstile";
 import {
@@ -35,44 +35,21 @@ import {
   type LeadFormValues,
   type LeadInput,
 } from "@/lib/validation/lead";
+import { formatNumber } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import { submitLead } from "@/server/actions/submit-lead";
 
-const STORAGE_KEY = "fairankauf:lead-draft:v1";
-
 const STEPS = [
-  { key: "basics", title: "Ihr Auto" },
-  { key: "condition", title: "Zustand" },
-  { key: "location", title: "Preis und Standort" },
-  { key: "contact", title: "Ihre Kontaktdaten" },
-] as const satisfies { key: keyof typeof STEP_FIELDS; title: string }[];
-
-type Draft = { step: number; values: Partial<LeadFormValues> };
-
-function loadDraft(): Draft | null {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Draft) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveDraft(draft: Draft) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  } catch {
-    // Storage full or blocked (private mode): the form still works without it.
-  }
-}
-
-function clearDraft() {
-  try {
-    window.localStorage.removeItem(STORAGE_KEY);
-  } catch {}
-}
+  { key: "basics", title: "Ihr Auto", short: "Auto" },
+  { key: "condition", title: "Zustand", short: "Zustand" },
+  { key: "location", title: "Preis und Standort", short: "Preis & Ort" },
+  { key: "contact", title: "Ihre Kontaktdaten", short: "Kontakt" },
+] as const satisfies { key: keyof typeof STEP_FIELDS; title: string; short: string }[];
 
 const thisYear = new Date().getFullYear();
 const YEARS = Array.from({ length: thisYear - 1950 + 1 }, (_, i) => String(thisYear - i));
+// The next HU is due within the next 2 years, or is already overdue.
+const HU_YEARS = Array.from({ length: 8 }, (_, i) => String(thisYear + 2 - i));
 
 export function LeadWizard() {
   const router = useRouter();
@@ -178,14 +155,57 @@ export function LeadWizard() {
       }}
       className="grid gap-6"
     >
-      <div className="grid gap-2">
-        <p className="text-sm text-muted-foreground">
-          Schritt {step + 1} von {STEPS.length}
-        </p>
-        <Progress value={((step + 1) / STEPS.length) * 100} aria-label="Fortschritt" />
-        <h1 ref={headingRef} tabIndex={-1} className="mt-2 text-2xl font-semibold tracking-tight outline-none">
-          {current.title}
-        </h1>
+      <div className="grid gap-4">
+        <ol aria-label={`Schritt ${step + 1} von ${STEPS.length}`} className="grid grid-cols-4 gap-1.5">
+          {STEPS.map((s, i) => {
+            const done = i < step;
+            const label = (
+              <>
+                <span
+                  className={cn(
+                    "h-1.5 rounded-full transition-colors",
+                    i <= step ? "bg-primary" : "bg-primary/15",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-xs font-medium sm:text-sm",
+                    i === step ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {done && <CheckIcon aria-hidden className="size-3.5 text-primary" strokeWidth={3} />}
+                  {s.short}
+                </span>
+              </>
+            );
+            return (
+              <li key={s.key} aria-current={i === step ? "step" : undefined}>
+                {done ? (
+                  // Completed steps can be reopened.
+                  <button
+                    type="button"
+                    onClick={() => goTo(i)}
+                    disabled={pending}
+                    className="grid w-full gap-2 rounded-sm pb-1 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    {label}
+                    <span className="sr-only">(bearbeiten)</span>
+                  </button>
+                ) : (
+                  <div className="grid gap-2 pb-1">{label}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Schritt {step + 1} von {STEPS.length}
+          </p>
+          <h1 ref={headingRef} tabIndex={-1} className="mt-1 text-3xl font-bold tracking-tight outline-none">
+            {current.title}
+          </h1>
+        </div>
       </div>
 
       {current.key === "basics" && (
@@ -329,15 +349,61 @@ export function LeadWizard() {
             error={err("drivable")}
             inputProps={register("drivable")}
           />
-          <Field id="huDue" label="Nächste HU/TÜV fällig" optional error={err("huDue")}>
-            <Input
-              id="huDue"
-              type="month"
-              aria-invalid={!!err("huDue")}
-              aria-describedby={describedBy("huDue", err("huDue"))}
-              {...register("huDue")}
-            />
-          </Field>
+          <Controller
+            control={control}
+            name="huDue"
+            render={({ field }) => {
+              // Stored as "YYYY-MM"; shown as two German selects instead of the
+              // browser's month picker, which follows the phone's language.
+              const [year = "", month = ""] = field.value ? field.value.split("-") : [];
+              // A half-filled date ("2027-") fails validation with "Bitte Monat und Jahr wählen."
+              const set = (y: string, m: string) => field.onChange(y || m ? `${y}-${m}` : "");
+              return (
+                <fieldset className="grid gap-2" aria-describedby={err("huDue") ? "huDue-error" : undefined}>
+                  <legend className="mb-2 flex gap-2 text-sm font-medium">
+                    Nächste HU/TÜV fällig
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    <NativeSelect
+                      id="huDue"
+                      aria-label="HU-Monat"
+                      aria-invalid={!!err("huDue")}
+                      value={month}
+                      onChange={(e) => set(year, e.target.value)}
+                      onBlur={field.onBlur}
+                    >
+                      <option value="">Monat</option>
+                      {MONTHS.map((m, i) => (
+                        <option key={m} value={String(i + 1).padStart(2, "0")}>
+                          {m}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                    <NativeSelect
+                      aria-label="HU-Jahr"
+                      aria-invalid={!!err("huDue")}
+                      value={year}
+                      onChange={(e) => set(e.target.value, month)}
+                      onBlur={field.onBlur}
+                    >
+                      <option value="">Jahr</option>
+                      {HU_YEARS.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  {err("huDue") && (
+                    <p id="huDue-error" role="alert" className="text-sm text-destructive">
+                      {err("huDue")}
+                    </p>
+                  )}
+                </fieldset>
+              );
+            }}
+          />
           <ChoiceGroup
             name="serviceBook"
             legend="Scheckheftgepflegt?"
@@ -418,6 +484,7 @@ export function LeadWizard() {
 
       {current.key === "contact" && (
         <div className="grid gap-5">
+          <CarSummary values={form.getValues()} />
           <Field id="name" label="Name" error={err("name")}>
             <Input
               id="name"
@@ -496,7 +563,14 @@ export function LeadWizard() {
         </p>
       )}
 
-      <div className="sticky bottom-0 -mx-4 grid grid-cols-[auto_1fr] gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur">
+      {isLast && (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <LockIcon aria-hidden className="size-4 shrink-0" />
+          Kostenlos und unverbindlich. Ihre Angaben gehen nur an uns.
+        </p>
+      )}
+
+      <div className="sticky bottom-0 -mx-5 grid grid-cols-[auto_1fr] gap-3 border-t bg-card/95 px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8">
         {step > 0 ? (
           <Button type="button" variant="outline" size="lg" onClick={() => goTo(step - 1)} disabled={pending}>
             <ArrowLeftIcon aria-hidden />
@@ -522,5 +596,22 @@ export function LeadWizard() {
         </Button>
       </div>
     </form>
+  );
+}
+
+/** "Volkswagen Golf · 2016 · 123.000 km": reassures the seller before sending. */
+function CarSummary({ values }: { values: LeadFormValues }) {
+  const km = Number(String(values.mileageKm ?? "").replace(/[\s.]/g, ""));
+  const parts = [
+    [values.brand, values.model].filter(Boolean).join(" "),
+    values.firstRegYear,
+    Number.isFinite(km) && km > 0 ? `${formatNumber(km)} km` : "",
+  ].filter(Boolean);
+  if (parts.length === 0) return null;
+  return (
+    <div className="rounded-xl bg-accent px-4 py-3">
+      <p className="text-xs font-medium text-muted-foreground">Ihr Auto</p>
+      <p className="font-semibold">{parts.join(" · ")}</p>
+    </div>
   );
 }

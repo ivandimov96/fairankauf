@@ -17,7 +17,9 @@ async function choose(scope: Page | Locator, name: string) {
 test("seller submits a car and sees the thank-you page", async ({ page }) => {
   const phoneLocal = `0151 ${String(Date.now()).slice(-8)}`;
   await page.goto("/");
-  await page.getByRole("link", { name: "Jetzt Auto bewerten lassen" }).click();
+  // Quick start on the landing page carries the year into the form.
+  await page.getByLabel("Erstzulassung").selectOption("2016");
+  await page.getByRole("button", { name: "Jetzt Auto bewerten lassen" }).click();
   await expect(page.getByRole("heading", { name: "Ihr Auto", exact: true })).toBeVisible();
 
   // Step 1: errors show when required fields are missing.
@@ -27,7 +29,8 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await page.getByRole("combobox", { name: "Marke" }).fill("volks");
   await page.getByRole("option", { name: "Volkswagen" }).click();
   await page.getByLabel("Modell").fill("Golf 1.4 TSI");
-  await page.getByLabel("Erstzulassung").selectOption("2016");
+  // The landing page stays mounted but hidden after client navigation, so target the form field by id.
+  await expect(page.locator("#firstRegYear")).toHaveValue("2016");
   await page.getByLabel("Kilometerstand (km)").fill("123.000");
   await choose(page, "Benzin");
   await choose(page, "Manuell");
@@ -69,9 +72,9 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
 });
 
 test("a bot filling the hidden honeypot field is silently dropped", async ({ page }) => {
-  await page.goto("/verkaufen");
-  // Jump straight to the last step with a complete draft, as a bot would.
-  await page.evaluate(() =>
+  // Jump straight to the last step with a complete draft, as a bot would. Set it
+  // before any page script runs, so the form can't overwrite it while hydrating.
+  await page.addInitScript(() =>
     localStorage.setItem(
       "fairankauf:lead-draft:v1",
       JSON.stringify({
@@ -86,7 +89,7 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
       }),
     ),
   );
-  await page.reload();
+  await page.goto("/verkaufen");
   await page.locator("#website").fill("https://spam.example", { force: true });
   await page.getByRole("button", { name: "Angebot anfordern" }).click();
   // Looks like success to the bot; the unit tests check nothing is sent.

@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Bricolage_Grotesque, Geist } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
 });
 
@@ -25,12 +30,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1f6b4f",
+  themeColor: "#173f33",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" className={`${geistSans.variable} h-full`}>
+    <html lang="de" className={`${geistSans.variable} ${bricolage.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { CheckIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -26,13 +27,14 @@ export function ChoiceGroup({ name, legend, options, optional, error, columns = 
           <label
             key={value}
             className={cn(
-              "flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-input bg-card px-3 py-2 text-center text-sm font-medium shadow-xs transition-colors select-none",
+              "group/choice flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-input bg-card px-3 py-2 text-center text-sm font-medium shadow-xs transition-colors select-none hover:border-primary/60",
               "has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground",
               "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
               error && "border-destructive",
             )}
           >
             <input type="radio" value={value} className="sr-only" {...inputProps} />
+            <CheckIcon aria-hidden className="hidden size-4 shrink-0 group-has-[:checked]/choice:block" strokeWidth={3} />
             {label}
           </label>
         ))}

@@ -10,8 +10,13 @@ export const metadata: Metadata = {
 
 export default function SellPage() {
   return (
-    <main className="mx-auto w-full max-w-xl px-4 pt-6">
-      <LeadWizard />
+    <main className="mx-auto w-full max-w-2xl px-3 pt-4 pb-10 sm:px-4 sm:pt-10">
+      <div className="rounded-2xl border bg-card px-5 pt-5 shadow-sm sm:px-8 sm:pt-8">
+        <LeadWizard />
+      </div>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        Ihre Eingaben werden automatisch auf diesem Gerät gespeichert.
+      </p>
     </main>
   );
 }

@@ -29,6 +29,19 @@ export function BrandPicker({ id, value, onChange, onBlur, error, describedBy }:
   const [active, setActive] = React.useState(0);
   const listId = `${id}-list`;
 
+  // The value can change from outside (a restored draft or the landing page's
+  // quick start). Adjust local state during render, as React recommends.
+  const [seenValue, setSeenValue] = React.useState(value);
+  if (value !== seenValue) {
+    setSeenValue(value);
+    if (value && isListed(value)) {
+      setQuery(value);
+      setOther(false);
+    } else if (value) {
+      setOther(true);
+    }
+  }
+
   const options = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     const matches = q && !isListed(query) ? BRANDS.filter((b) => b.toLowerCase().includes(q)) : BRANDS;
