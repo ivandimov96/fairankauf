@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { TURNSTILE_SITE_KEY, Turnstile } from "@/components/form/turnstile";
 import {
   ACCIDENT,
   BODY_TYPES,
@@ -80,6 +81,8 @@ export function LeadWizard() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [pending, startTransition] = React.useTransition();
   const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const honeypotRef = React.useRef<HTMLInputElement>(null);
+  const [turnstileToken, setTurnstileToken] = React.useState<string | undefined>();
 
   const form = useForm<LeadFormValues, unknown, LeadInput>({
     resolver: zodResolver(leadSchema),
@@ -132,7 +135,10 @@ export function LeadWizard() {
     setSubmitError(null);
     startTransition(async () => {
       // Send the raw form values; the server parses them with the same schema.
-      const result = await submitLead(form.getValues());
+      const result = await submitLead(form.getValues(), {
+        website: honeypotRef.current?.value,
+        turnstileToken,
+      });
       if (result.ok) {
         clearDraft();
         router.push("/verkaufen/danke");
@@ -476,6 +482,14 @@ export function LeadWizard() {
         </div>
       )}
 
+      {/* Honeypot: invisible to people, bots fill it in. */}
+      <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input ref={honeypotRef} id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
+
+      {isLast && <Turnstile onToken={setTurnstileToken} />}
+
       {submitError && (
         <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           {submitError}
@@ -491,7 +505,7 @@ export function LeadWizard() {
         ) : (
           <span />
         )}
-        <Button type="submit" size="lg" disabled={pending}>
+        <Button type="submit" size="lg" disabled={pending || (isLast && !!TURNSTILE_SITE_KEY && !turnstileToken)}>
           {pending ? (
             <>
               <LoaderCircleIcon aria-hidden className="animate-spin" />

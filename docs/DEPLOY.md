@@ -66,5 +66,5 @@ Every push to `main` on GitHub deploys automatically.
 
 - Replace the placeholder **Impressum** and **Datenschutzerklärung** (legally required in
   Germany; e.g. generate them with eRecht24).
-- Phase 7 (spam protection, limits, SEO) is still to come.
+- Optional, if spam arrives: add Cloudflare Turnstile. Create a free site at <https://dash.cloudflare.com> → Turnstile, then set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` and redeploy. A hidden trap field and a limit of 5 requests per hour per visitor are always on.
 - Optional: connect your own domain under Settings → Domains, then update `APP_URL`.

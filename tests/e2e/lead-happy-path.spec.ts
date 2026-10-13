@@ -24,6 +24,8 @@ test("seller submits a car and the lead is saved", async ({ page }) => {
   const phoneE164 = `+49151${String(Date.now()).slice(-8)}`;
 
   try {
+    // Repeated local runs would otherwise hit the 5-per-hour limit.
+    await sql`delete from rate_limits`;
     await page.goto("/");
     await page.getByRole("link", { name: "Jetzt Auto bewerten lassen" }).click();
     await expect(page.getByRole("heading", { name: "Ihr Auto", exact: true })).toBeVisible();
@@ -87,6 +89,39 @@ test("seller submits a car and the lead is saved", async ({ page }) => {
     });
   } finally {
     await sql`delete from leads where phone = ${phoneE164}`;
+    await sql.end();
+  }
+});
+
+test("a bot filling the hidden honeypot field is silently dropped", async ({ page }) => {
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  try {
+    await sql`delete from rate_limits`;
+    const before = (await sql`select count(*)::int as n from leads`)[0]!.n as number;
+    await page.goto("/verkaufen");
+    // Jump straight to the last step with a complete draft, as a bot would.
+    await page.evaluate(() =>
+      localStorage.setItem(
+        "fairankauf:lead-draft:v1",
+        JSON.stringify({
+          step: 3,
+          values: {
+            brand: "Audi", model: "A4", firstRegYear: "2015", firstRegMonth: "", mileageKm: "150000",
+            fuel: "DIESEL", gearbox: "MANUELL", power: "", powerUnit: "PS", bodyType: "",
+            condition: "GUT", accident: "NEIN", drivable: "JA", huDue: "", serviceBook: "JA",
+            previousOwners: "1", defects: "", desiredPrice: "", plz: "10115", city: "Berlin",
+            name: "Bot", phone: "015112345678", email: "", contactMethod: "ANRUF", consent: true,
+          },
+        }),
+      ),
+    );
+    await page.reload();
+    await page.locator("#website").fill("https://spam.example", { force: true });
+    await page.getByRole("button", { name: "Angebot anfordern" }).click();
+    await expect(page.getByRole("heading", { name: "Vielen Dank!", exact: true })).toBeVisible();
+    const after = (await sql`select count(*)::int as n from leads`)[0]!.n as number;
+    expect(after).toBe(before);
+  } finally {
     await sql.end();
   }
 });

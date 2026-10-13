@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { LeadWizard } from "@/components/form/lead-wizard";
 
 export const metadata: Metadata = {
-  title: "Auto verkaufen – Daten eingeben | FairAnkauf",
+  title: "Auto verkaufen – Daten eingeben",
+  alternates: { canonical: "/verkaufen" },
   description: "Beschreiben Sie Ihr Auto in wenigen Schritten und erhalten Sie ein faires Angebot.",
 };
 

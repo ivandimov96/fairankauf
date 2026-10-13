@@ -7,10 +7,15 @@ import { headers } from "next/headers";
 
 import { db, schema } from "@/lib/db";
 
+/** The client's IP from the proxy headers (Vercel sets x-forwarded-for). */
+export async function clientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+}
+
 /** The client's IP, hashed so no raw IP address is stored (GDPR). */
 export async function clientIpHash(): Promise<string> {
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  const ip = await clientIp();
   const salt = process.env.IP_HASH_SALT || "fairankauf";
   return createHash("sha256").update(`${salt}:${ip}`).digest("base64url").slice(0, 32);
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Impressum | FairAnkauf" };
+export const metadata: Metadata = { title: "Impressum" };
 
 // PLACEHOLDER: replace with your real details (e.g. generated with eRecht24) before launch.
 export default function ImpressumPage() {

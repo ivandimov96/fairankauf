@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,8 +9,19 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "FairAnkauf – Auto schnell und fair verkaufen",
-  description: "Verkaufen Sie Ihr Auto schnell, fair und ohne Aufwand.",
+  metadataBase: new URL(siteUrl()),
+  title: { default: "FairAnkauf – Auto schnell und fair verkaufen", template: "%s | FairAnkauf" },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    siteName: SITE_NAME,
+    title: "FairAnkauf – Auto schnell und fair verkaufen",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

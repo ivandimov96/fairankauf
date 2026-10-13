@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Datenschutzerklärung | FairAnkauf" };
+export const metadata: Metadata = { title: "Datenschutzerklärung" };
 
 // PLACEHOLDER: replace with a complete privacy policy (e.g. generated with eRecht24)
-// before launch. It must name Vercel (hosting), Neon (database),
-// Cloudflare Turnstile (spam protection) and the WhatsApp notification provider.
+// before launch. The provider list below is accurate for this app; keep it.
 export default function DatenschutzPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-12">
@@ -26,7 +25,16 @@ export default function DatenschutzPage() {
         [E-Mail-Adresse] genügt.
       </p>
       <h2 className="mt-8 text-xl font-semibold">4. Dienstleister</h2>
-      <p className="mt-2">[Hosting, Datenbank, Spamschutz, Benachrichtigungsdienst]</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>Hosting: Vercel Inc. (Server in Frankfurt am Main)</li>
+        <li>Datenbank: Neon Inc. (Server in Frankfurt am Main)</li>
+        <li>Spamschutz: Cloudflare Turnstile (Cloudflare Inc.)</li>
+        <li>
+          Benachrichtigung: Ihre Angaben werden per WhatsApp (Meta Platforms Ireland Ltd.) an uns übermittelt,
+          über den Dienst CallMeBot.
+        </li>
+      </ul>
+      <p className="mt-2">[Angaben zu Auftragsverarbeitung und Drittlandübermittlung ergänzen]</p>
       <h2 className="mt-8 text-xl font-semibold">5. Ihre Rechte</h2>
       <p className="mt-2">
         Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
@@ -34,7 +42,7 @@ export default function DatenschutzPage() {
       </p>
       <h2 className="mt-8 text-xl font-semibold">6. Cookies</h2>
       <p className="mt-2">
-        Auf den öffentlichen Seiten setzen wir keine Tracking-Cookies. Ihre Formulareingaben werden nur
+        Wir setzen keine Tracking-Cookies und keine Analyse-Tools ein. Ihre Formulareingaben werden nur
         lokal in Ihrem Browser zwischengespeichert, bis Sie das Formular absenden.
       </p>
     </main>

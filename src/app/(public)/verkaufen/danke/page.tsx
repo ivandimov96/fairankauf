@@ -5,7 +5,7 @@ import { CircleCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Vielen Dank | FairAnkauf",
+  title: "Vielen Dank",
   robots: { index: false },
 };
 

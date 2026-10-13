@@ -17,7 +17,7 @@ Seller's phone
    │ 4-step form (react-hook-form + Zod), draft kept in localStorage
    ▼
 Server Action submitLead
-   1. spam checks (honeypot, Turnstile, rate limit)      ← Phase 7
+   1. spam checks (honeypot, optional Turnstile, 5 leads/hour per IP)
    2. Zod parse (same schema as the client)
    3. INSERT lead (notificationStatus = PENDING)
    4. send WhatsApp (3 tries) → SENT / FAILED + error text
@@ -89,5 +89,5 @@ Money is integer cents, timestamps are UTC (`timestamptz`).
 | 4 Photos | dropped |
 | 5 Admin area | dropped; replaced by retries + daily retry job |
 | 6 Deals, profit, dashboard, CSV | dropped |
-| 7 Hardening: Turnstile, rate limiting, honeypot, legal pages, SEO, error states, mobile review | next |
-| 8 Deployment guide (Vercel, Neon, CallMeBot) | after 7 |
+| 7 Hardening: Turnstile (optional), rate limiting, honeypot, SEO, error pages, mobile review | done (Lighthouse mobile: 96–98 performance, 100 a11y/SEO/best practices) |
+| 8 Deployment guide (Vercel, Neon, CallMeBot) | done: docs/DEPLOY.md |
