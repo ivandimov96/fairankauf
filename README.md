@@ -43,4 +43,4 @@ Every variable is documented in [`.env.example`](.env.example).
 
 WhatsApp notifications (CallMeBot and the official Cloud API): [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md).
 
-Full deployment guide: written in Phase 8 (Vercel, Neon).
+Go live on Vercel + Neon: [`docs/DEPLOY.md`](docs/DEPLOY.md).
