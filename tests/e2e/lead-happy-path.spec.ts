@@ -88,7 +88,7 @@ test("seller submits a car and the lead is saved", async ({ page }) => {
       power_kw: 92,
       desired_price_cents: 950000,
       status: "NEU",
-      notification_status: "PENDING",
+      notification_status: "SENT", // console provider (NOTIFICATION_PROVIDER=console in .env.local)
       history: 1,
     });
   } finally {

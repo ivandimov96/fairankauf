@@ -1,6 +1,7 @@
 "use server";
 
 import { db, schema } from "@/lib/db";
+import { notifyNewLead } from "@/lib/notifications";
 import { leadSchema, toLeadRow } from "@/lib/validation/lead";
 
 export type SubmitLeadResult =
@@ -18,13 +19,15 @@ export async function submitLead(values: unknown): Promise<SubmitLeadResult> {
     return { ok: false, message: "Bitte prüfen Sie Ihre Angaben.", fieldErrors };
   }
 
+  let leadId: string;
   try {
-    await db().transaction(async (tx) => {
+    leadId = await db().transaction(async (tx) => {
       const [lead] = await tx
         .insert(schema.leads)
         .values(toLeadRow(parsed.data, new Date()))
         .returning({ id: schema.leads.id });
       await tx.insert(schema.statusHistory).values({ leadId: lead!.id, toStatus: "NEU" });
+      return lead!.id;
     });
   } catch (error) {
     console.error("submitLead: insert failed", error);
@@ -34,7 +37,8 @@ export async function submitLead(values: unknown): Promise<SubmitLeadResult> {
     };
   }
 
-  // Phase 3: send the WhatsApp notification here, after the lead is saved.
+  // The lead is saved; a failed notification is recorded on the lead, not shown to the seller.
+  await notifyNewLead(leadId);
   return { ok: true };
 }
 
