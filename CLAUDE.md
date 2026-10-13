@@ -21,7 +21,7 @@ pnpm build
 pnpm lint
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest run
-pnpm test:e2e       # playwright
+pnpm test:e2e       # playwright (builds + starts on :3100, needs DATABASE_URL; in cloud sandboxes set PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium)
 pnpm db:generate    # drizzle-kit generate (after schema change)
 pnpm db:migrate     # apply migrations
 pnpm db:studio
@@ -29,7 +29,7 @@ pnpm db:studio
 
 ## Conventions
 
-- **Language:** all user-facing text German, kept in `src/messages/de.ts`. Code, comments, commits in English.
+- **Language:** all user-facing text German. Page copy lives in the page, option labels in `src/lib/options.ts`, validation messages in the Zod schemas. Code, comments, commits in English.
 - **Money:** integer cents everywhere (`*Cents` columns). Format only at the edge via `lib/money.ts` (`de-DE`, EUR).
 - **Dates:** store UTC (`timestamptz`), display in `Europe/Berlin` via `lib/dates.ts`. Relative ages like "vor 2 Std.".
 - **Phones:** store E.164 (`+49…`). Parse with libphonenumber-js, default country DE, international accepted.
@@ -46,6 +46,7 @@ pnpm db:studio
 - DB driver: `postgres` (postgres.js) via `drizzle-orm/postgres-js`, `prepare: false` for Neon's pooled URL. Same driver locally and in production. Access via `db()` from `@/lib/db`.
 - Drizzle `casing: "snake_case"`: camelCase in TS, snake_case columns. Schema in `src/lib/db/schema.ts`; never edit generated SQL in `drizzle/` by hand.
 - `next.config.ts` has `cacheComponents: true`: uncached data access (DB, cookies) in a page must sit inside `<Suspense>` or the build fails. Read `node_modules/next/dist/docs/01-app/02-guides/` before using caching APIs.
+- Shell gotcha: `pkill -f next` also matches the agent's own shell; use `pkill -f "[n]ext-server"`.
 - shadcn components live in `src/components/ui/`. If the shadcn CLI can't reach ui.shadcn.com (some sandboxes block it), copy the component source in by hand, keeping `components.json` conventions.
 
 - Auth: single admin, scrypt hash in `ADMIN_PASSWORD_HASH`, HMAC-signed session cookie (`SESSION_SECRET`). No Auth.js.
