@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FairAnkauf
 
-## Getting Started
+Website and private admin tool for buying used cars from private sellers in Germany:
+a German landing page with a multi-step lead form, a WhatsApp notification for every new
+lead, and a mobile-first `/admin` area to track each car from lead to profit.
 
-First, run the development server:
+Plan and architecture: [`docs/PLAN.md`](docs/PLAN.md). Conventions: [`CLAUDE.md`](CLAUDE.md).
+
+## Local setup
+
+Requirements: Node.js 22+, pnpm 10, PostgreSQL 16 (local install or Docker).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local          # then adjust DATABASE_URL if needed
+
+# Postgres via Docker (or use any local Postgres and create a "fairankauf" database)
+docker run -d --name fairankauf-db -p 5432:5432 \
+  -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=fairankauf postgres:16
+
+pnpm db:migrate                     # create tables
+pnpm dev                            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Start the dev server |
+| `pnpm build` / `pnpm start` | Production build / serve it |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | Generate route types and run `tsc --noEmit` |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm test:e2e` | End-to-end test (Playwright, needs a running database) |
+| `pnpm db:generate` | Create a migration after changing `src/lib/db/schema.ts` |
+| `pnpm db:migrate` | Apply migrations to `DATABASE_URL` |
+| `pnpm db:studio` | Browse the database |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Every variable is documented in [`.env.example`](.env.example).
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment and WhatsApp setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Written in Phase 8 (Vercel, Neon, Vercel Blob, CallMeBot / WhatsApp Cloud API).
