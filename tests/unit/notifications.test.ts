@@ -7,6 +7,8 @@ import {
   callmebotProvider,
   cloudTemplatePayload,
   consoleProvider,
+  telegramPayload,
+  telegramProvider,
   whatsappCloudProvider,
 } from "@/lib/notifications/providers";
 
@@ -102,6 +104,28 @@ describe("providers", () => {
     ).rejects.toThrow("CallMeBot 200: APIKey is invalid.");
   });
 
+  it("telegram posts the plain-text message to the chat", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+    await telegramProvider({ botToken: "123:abc", chatId: "42" }, fetchMock).sendNewLead(lead);
+
+    const [url, init] = fetchMock.mock.calls[0]! as [string, RequestInit];
+    expect(url).toBe("https://api.telegram.org/bot123:abc/sendMessage");
+    const body = JSON.parse(init.body as string);
+    expect(body).toEqual(telegramPayload(lead, "42"));
+    expect(body.chat_id).toBe("42");
+    expect(body.text).toContain("Neue Anfrage: Volkswagen Golf 1.4 TSI");
+    expect(body.text).not.toContain("*");
+  });
+
+  it("telegram throws with Telegram's error text", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ ok: false, description: "Bad Request: chat not found" }, { status: 400 }));
+    await expect(telegramProvider({ botToken: "1:a", chatId: "1" }, fetchMock).sendNewLead(lead)).rejects.toThrow(
+      /Telegram 400: .*chat not found/,
+    );
+  });
+
   it("whatsapp_cloud posts the template with the body parameters", async () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ messages: [{ id: "wamid.x" }] }));
     const cfg = { phone: "+4915156041400", token: "tok", phoneNumberId: "1234567890", template: "new_car_lead", lang: "de" };
@@ -143,6 +167,15 @@ describe("notificationConfig", () => {
     expect(() =>
       notificationConfig({ NOTIFICATION_PROVIDER: "callmebot", NOTIFY_PHONE: "+4915156041400", CALLMEBOT_API_KEY: "" }),
     ).toThrow(/CALLMEBOT_API_KEY/);
+  });
+
+  it("parses the telegram settings", () => {
+    expect(
+      notificationConfig({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA-b_c", TELEGRAM_CHAT_ID: "987654" }),
+    ).toEqual({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA-b_c", TELEGRAM_CHAT_ID: "987654" });
+    expect(() =>
+      notificationConfig({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA", TELEGRAM_CHAT_ID: "@me" }),
+    ).toThrow(/TELEGRAM_CHAT_ID/);
   });
 
   it("rejects a phone number that is not E.164", () => {

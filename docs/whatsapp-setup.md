@@ -1,4 +1,4 @@
-# WhatsApp notification setup
+# Lead notification setup (WhatsApp or Telegram)
 
 Every new lead sends one WhatsApp message to your phone. Which service sends it is chosen
 with `NOTIFICATION_PROVIDER`:
@@ -7,6 +7,7 @@ with `NOTIFICATION_PROVIDER`:
 |---|---|---|
 | `console` | Prints the message in the server log | Local development and tests |
 | `callmebot` | Free CallMeBot service | **Start here.** Set up in 2 minutes |
+| `telegram` | Official Telegram bot, free | **Easiest reliable option.** Set up in 5 minutes |
 | `whatsapp_cloud` | Official Meta WhatsApp Cloud API | Later, for a reliable official setup |
 
 WhatsApp is the only place you see leads; there is no admin website. The lead is still
@@ -63,7 +64,35 @@ Tap the phone number to call, or the 💬 link to write to the seller on WhatsAp
 
 ---
 
-## Option 2: WhatsApp Cloud API (official, Meta)
+## Option 2: Telegram (free, official, 5 minutes)
+
+Use this if CallMeBot doesn't answer. You get each lead as a Telegram message from your own bot.
+
+1. Install **Telegram** on your phone and sign up with your phone number.
+2. Open the chat with **@BotFather** (blue tick), send `/newbot`, and answer its two questions:
+   a name (e.g. `FairAnkauf Leads`) and a username ending in `bot` (e.g. `fairankauf_leads_bot`).
+   It replies with a **token** like `123456789:AAH...`. Keep it secret: anyone with it controls the bot.
+3. Tap the link to your new bot in that reply and press **Start**. (A bot can only write to
+   people who started it.)
+4. Open the chat with **@userinfobot** and press **Start**. It replies with your **Id**, a number.
+
+### Configure
+
+```
+NOTIFICATION_PROVIDER=telegram
+TELEGRAM_BOT_TOKEN=<the token from step 2>
+TELEGRAM_CHAT_ID=<your Id from step 4>
+```
+
+`NOTIFY_PHONE` and `CALLMEBOT_API_KEY` are not needed for Telegram. The message text is the
+same as above, without the bold markers.
+
+If the log says `chat not found`, you haven't pressed **Start** in your bot's chat (step 3),
+or the Id is wrong.
+
+---
+
+## Option 3: WhatsApp Cloud API (official, Meta)
 
 Use this when you want an official, reliable setup. Important facts first:
 

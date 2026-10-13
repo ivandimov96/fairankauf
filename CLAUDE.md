@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Car-buying lead app for **FairAnkauf**, a solo founder's used-car buying business in Germany. Public German landing page + multi-step lead form; every lead is saved to Postgres and sent to Ivan's WhatsApp. **There is no admin website, no photos, no pipeline or profit tracking** (Ivan's decision, 2026-10-13); don't add them back unless he asks. Concept similar to wirkaufendeinauto.de, but **never copy their name, logo, colors, wording, images or layout**. Full plan: `docs/PLAN.md`. Next.js 16 differs from older versions: read the bundled docs in `node_modules/next/dist/docs/` before using an API (see `AGENTS.md`).
+Car-buying lead app for **FairAnkauf**, a solo founder's used-car buying business in Germany. Public German landing page + multi-step lead form; every lead is saved to Postgres and sent to Ivan's WhatsApp (or Telegram). **There is no admin website, no photos, no pipeline or profit tracking** (Ivan's decision, 2026-10-13); don't add them back unless he asks. Concept similar to wirkaufendeinauto.de, but **never copy their name, logo, colors, wording, images or layout**. Full plan: `docs/PLAN.md`. Next.js 16 differs from older versions: read the bundled docs in `node_modules/next/dist/docs/` before using an API (see `AGENTS.md`).
 
 ## Working agreement
 
@@ -36,7 +36,7 @@ pnpm db:studio
 - **Validation:** one Zod schema per form in `lib/validation/`, used by react-hook-form and re-parsed in the Server Action. Never trust client input.
 - **Security:** no secrets in client code or the repo; all env access through `lib/env.ts` (Zod-validated). Server-only modules import `server-only`.
 - **Lead submit order:** spam checks → validate → insert lead (`notificationStatus=PENDING`) → send notification (3 tries) → set `SENT`/`FAILED`. A failed notification never fails the submit; `/api/cron/retry-notifications` (Vercel Cron, daily, `CRON_SECRET`) re-sends FAILED ones.
-- **Notifications:** `NotificationProvider` interface in `lib/notifications/`; impls `console`, `callmebot`, `whatsapp_cloud`, chosen by `NOTIFICATION_PROVIDER`. Message text only from `formatLeadMessage()` (pure, unit-tested).
+- **Notifications:** `NotificationProvider` interface in `lib/notifications/`; impls `console`, `callmebot`, `telegram`, `whatsapp_cloud`, chosen by `NOTIFICATION_PROVIDER`. Message text only from `formatLeadMessage()` (pure, unit-tested).
 - **GDPR:** no tracking cookies; consent timestamp stored; deletion requests are handled by deleting the row in the Neon console.
 - **UI:** mobile-first, min 44px touch targets, visible focus states, labels on every input.
 

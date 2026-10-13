@@ -1,6 +1,6 @@
 import type { LeadSummary } from "./format";
 
-export type NotificationProviderName = "console" | "callmebot" | "whatsapp_cloud";
+export type NotificationProviderName = "console" | "callmebot" | "telegram" | "whatsapp_cloud";
 
 export interface NotificationProvider {
   readonly name: NotificationProviderName;

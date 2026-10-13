@@ -28,7 +28,7 @@ Vercel Cron, daily 07:00 UTC → /api/cron/retry-notifications re-sends FAILED l
 ```
 
 - **Notifications** sit behind `NotificationProvider`, chosen by `NOTIFICATION_PROVIDER`:
-  `console` (dev/tests), `callmebot` (start), `whatsapp_cloud` (official Meta API, template
+  `console` (dev/tests), `callmebot` (start), `telegram` (if CallMeBot fails), `whatsapp_cloud` (official Meta API, template
   `new_car_lead`). Text comes from pure, unit-tested formatters. Setup: `docs/whatsapp-setup.md`.
 - **Rate limiting** uses a Postgres `rate_limits` table (hashed IP + action), because
   in-memory counters don't work across serverless instances.

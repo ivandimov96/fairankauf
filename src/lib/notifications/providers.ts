@@ -40,6 +40,33 @@ export function callmebotProvider(
   };
 }
 
+/** Official Telegram Bot API: the bot sends the lead to your chat. https://core.telegram.org/bots/api */
+export function telegramProvider(
+  cfg: { botToken: string; chatId: string },
+  fetchImpl: Fetch = fetch,
+): NotificationProvider {
+  return {
+    name: "telegram",
+    async sendNewLead(lead) {
+      const res = await fetchImpl(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(telegramPayload(lead, cfg.chatId)),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) {
+        throw new Error(`Telegram ${res.status}: ${summarize(await res.text())}`);
+      }
+    },
+  };
+}
+
+export function telegramPayload(lead: LeadSummary, chatId: string) {
+  // Plain text: the WhatsApp *bold* markers would show up literally, and Telegram's
+  // Markdown mode rejects messages whose user text contains stray _ or *.
+  return { chat_id: chatId, text: formatLeadMessage(lead).replace(/\*/g, ""), disable_web_page_preview: true };
+}
+
 /** Official Meta WhatsApp Cloud API, using the approved `new_car_lead` template. */
 export function whatsappCloudProvider(
   cfg: { phone: string; token: string; phoneNumberId: string; template: string; lang: string },
@@ -88,6 +115,8 @@ export function createProvider(cfg: NotificationConfig): NotificationProvider {
       return consoleProvider();
     case "callmebot":
       return callmebotProvider({ phone: cfg.NOTIFY_PHONE, apiKey: cfg.CALLMEBOT_API_KEY });
+    case "telegram":
+      return telegramProvider({ botToken: cfg.TELEGRAM_BOT_TOKEN, chatId: cfg.TELEGRAM_CHAT_ID });
     case "whatsapp_cloud":
       return whatsappCloudProvider(
         {

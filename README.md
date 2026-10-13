@@ -1,7 +1,7 @@
 # FairAnkauf
 
 Website for buying used cars from private sellers in Germany: a German landing page with
-a multi-step lead form. Every lead is saved to Postgres and sent to the owner's WhatsApp.
+a multi-step lead form. Every lead is saved to Postgres and sent to the owner's WhatsApp or Telegram.
 
 Plan and architecture: [`docs/PLAN.md`](docs/PLAN.md). Conventions: [`CLAUDE.md`](CLAUDE.md).
 
@@ -41,6 +41,6 @@ Every variable is documented in [`.env.example`](.env.example).
 
 ## Deployment and WhatsApp setup
 
-WhatsApp notifications (CallMeBot and the official Cloud API): [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md).
+Lead notifications (CallMeBot, Telegram and the official WhatsApp Cloud API): [`docs/whatsapp-setup.md`](docs/whatsapp-setup.md).
 
 Go live on Vercel + Neon: [`docs/DEPLOY.md`](docs/DEPLOY.md).

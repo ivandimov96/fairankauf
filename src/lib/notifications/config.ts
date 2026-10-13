@@ -17,6 +17,12 @@ const schema = z.discriminatedUnion("NOTIFICATION_PROVIDER", [
     CALLMEBOT_API_KEY: z.string().min(1),
   }),
   z.object({
+    NOTIFICATION_PROVIDER: z.literal("telegram"),
+    TELEGRAM_BOT_TOKEN: z.string().regex(/^\d+:[\w-]+$/, "must look like 123456789:ABC..."),
+    // Your own chat id (a number; negative for groups).
+    TELEGRAM_CHAT_ID: z.string().regex(/^-?\d+$/, "must be a number"),
+  }),
+  z.object({
     NOTIFICATION_PROVIDER: z.literal("whatsapp_cloud"),
     NOTIFY_PHONE: e164,
     WHATSAPP_CLOUD_TOKEN: z.string().min(1),
