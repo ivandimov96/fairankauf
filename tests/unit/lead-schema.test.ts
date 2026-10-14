@@ -99,6 +99,11 @@ describe("leadSchema", () => {
   it("requires an email address when contact by email is chosen", () => {
     expect(errorsFor({ contactMethod: "EMAIL", email: "" })).toHaveProperty("email");
     expect(errorsFor({ contactMethod: "EMAIL", email: "max@example.de" })).toEqual({});
+    // Shown together with other errors, not only after they are fixed.
+    expect(errorsFor({ contactMethod: "EMAIL", email: "", consent: false as unknown as true })).toMatchObject({
+      email: expect.any(String),
+      consent: "Bitte stimmen Sie der Datenverarbeitung zu.",
+    });
   });
 
   it("shows German error messages", () => {

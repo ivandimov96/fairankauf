@@ -136,7 +136,7 @@ export default function HomePage() {
       <section aria-labelledby="so-gehts" className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
         <p className="text-sm font-semibold tracking-wide text-primary uppercase">In drei Schritten</p>
         <h2 id="so-gehts" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          So einfach geht&apos;s
+          So einfach geht’s
         </h2>
         <ol className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
           {STEPS.map((s, i) => (

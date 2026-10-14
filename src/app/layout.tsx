@@ -27,6 +27,8 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
   twitter: { card: "summary_large_image" },
+  // German-only site: stop browsers from auto-translating it (e.g. "Marke" into "brand").
+  other: { google: "notranslate" },
 };
 
 export const viewport: Viewport = {
@@ -35,7 +37,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" className={`${geistSans.variable} ${bricolage.variable} h-full`}>
+    <html lang="de" translate="no" className={`${geistSans.variable} ${bricolage.variable} h-full`}>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );

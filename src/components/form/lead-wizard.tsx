@@ -269,7 +269,7 @@ export function LeadWizard() {
             <Input
               id="mileageKm"
               inputMode="numeric"
-              placeholder="z. B. 120000"
+              placeholder="z. B. 120.000"
               aria-invalid={!!err("mileageKm")}
               aria-describedby={describedBy("mileageKm", err("mileageKm"))}
               {...register("mileageKm")}
@@ -356,7 +356,7 @@ export function LeadWizard() {
               // Stored as "YYYY-MM"; shown as two German selects instead of the
               // browser's month picker, which follows the phone's language.
               const [year = "", month = ""] = field.value ? field.value.split("-") : [];
-              // A half-filled date ("2027-") fails validation with "Bitte Monat und Jahr wählen."
+              // A half-filled date ("2027-") fails validation ("Bitte wählen Sie Monat und Jahr.")
               const set = (y: string, m: string) => field.onChange(y || m ? `${y}-${m}` : "");
               return (
                 <fieldset className="grid gap-2" aria-describedby={err("huDue") ? "huDue-error" : undefined}>
@@ -451,7 +451,7 @@ export function LeadWizard() {
             <Input
               id="desiredPrice"
               inputMode="numeric"
-              placeholder="z. B. 8500"
+              placeholder="z. B. 8.500"
               aria-invalid={!!err("desiredPrice")}
               aria-describedby={describedBy("desiredPrice", err("desiredPrice"), "hint")}
               {...register("desiredPrice")}
@@ -551,7 +551,7 @@ export function LeadWizard() {
 
       {/* Honeypot: invisible to people, bots fill it in. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        <label htmlFor="website">Website</label>
+        <label htmlFor="website">Webseite</label>
         <input ref={honeypotRef} id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 

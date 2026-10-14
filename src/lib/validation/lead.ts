@@ -17,7 +17,9 @@ import {
 
 // One schema for the client form (react-hook-form) and the Server Action.
 // Form inputs are strings; the schema trims, converts and range-checks them.
-// Error messages are German because they are shown to sellers.
+// Error messages are German because they are shown to sellers. Zod's own
+// fallback messages are German too.
+z.config(z.locales.de());
 
 const MIN_YEAR = 1950;
 
@@ -80,7 +82,7 @@ export const leadStep2 = z.object({
   huDue: z
     .string()
     .trim()
-    .refine((v) => v === "" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v), "Bitte Monat und Jahr wählen.")
+    .refine((v) => v === "" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v), "Bitte wählen Sie Monat und Jahr.")
     .transform((v) => v || null),
   serviceBook: choice(SERVICE_BOOK, "Bitte wählen Sie eine Option."),
   previousOwners: requiredInt(0, () => 20, "Bitte geben Sie die Anzahl der Vorbesitzer ein."),
@@ -120,14 +122,12 @@ export const leadSchema = leadStep1
   .extend(leadStep2.shape)
   .extend(leadStep4.shape)
   .extend(leadStep5.shape)
-  .superRefine((v, ctx) => {
-    if (v.email === null && v.contactMethod === "EMAIL") {
-      ctx.addIssue({
-        code: "custom",
-        path: ["email"],
-        message: "Bitte geben Sie Ihre E-Mail-Adresse ein, wenn wir Sie per E-Mail kontaktieren sollen.",
-      });
-    }
+  .refine((v) => !(v.email === null && v.contactMethod === "EMAIL"), {
+    path: ["email"],
+    message: "Bitte geben Sie Ihre E-Mail-Adresse ein, wenn wir Sie per E-Mail kontaktieren sollen.",
+    // Run even when other fields (e.g. the consent box) are still invalid, so the
+    // seller sees every problem on the last step at once.
+    when: ({ issues }) => !issues.some((i) => i.path?.[0] === "email" || i.path?.[0] === "contactMethod"),
   });
 
 /** What the form holds (all strings / booleans). */
