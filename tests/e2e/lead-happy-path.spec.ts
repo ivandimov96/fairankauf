@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // Full happy path: fill the form → lead sent via the console provider → thank-you page.
-// The server runs without channel keys, so leads go to the log (playwright.config.ts).
+// Leads currently go to the server log only (no channel configured yet).
 
 /**
  * Taps a choice button. Error messages disappearing after a tap shift the layout,

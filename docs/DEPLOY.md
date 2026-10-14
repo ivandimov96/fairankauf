@@ -1,18 +1,12 @@
 # Go live: FairAnkauf on Vercel
 
 About 10 minutes. You need a computer browser (the phone works too, but it's fiddly).
-Everything here is free to start. There is no database: every lead goes straight to your
-email and WhatsApp.
+Everything here is free to start. There is no database.
 
-## 1. Set up where leads arrive
+## 1. Where leads arrive
 
-Follow [`notifications-setup.md`](notifications-setup.md):
-
-- **Email** (5 minutes): a Google **App Password** for `vlado.dimov2@gmail.com`.
-- **WhatsApp** (about 30 minutes): a Meta developer app → you end up with a **token**, a
-  **phone number ID** and an approved **message template**.
-
-Email alone is enough to go live; WhatsApp can be added later. Keep the values for step 3.
+Not decided yet (all channels were removed on 2026-10-14 to start over). Until a new
+channel is built, a submitted lead is only visible under Vercel → project → **Logs**.
 
 ## 2. Create the Vercel project
 
@@ -29,11 +23,6 @@ Project → **Settings → Environment Variables**. Add these (Environment: Prod
 | Name | Value |
 |---|---|
 | `APP_URL` | `https://fairankauf.vercel.app` (or your own domain later, no `/` at the end) |
-| `SMTP_USER` | Email: `vlado.dimov2@gmail.com` |
-| `SMTP_PASS` | Email: the App Password from step 1 |
-| `WHATSAPP_CLOUD_TOKEN` | WhatsApp: the permanent token from step 1 |
-| `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | WhatsApp: the phone number ID from step 1 |
-| `NOTIFY_PHONE` | WhatsApp: your own number, e.g. `+38971943038` |
 
 The real name of your site is shown on the project's overview page (e.g.
 `fairankauf.vercel.app` or `fairankauf-xyz.vercel.app`); use that for `APP_URL`.
@@ -47,12 +36,8 @@ if you haven't yet). Wait until it says **Ready**.
 
 1. Open your site on your phone, click **"Jetzt Auto bewerten lassen"** and submit a test car
    with your own phone number.
-2. The email (and the WhatsApp message) should arrive within seconds. Check the spam
-   folder the first time.
-3. If one channel is silent but the other works, or the form says "Das hat leider nicht
-   geklappt": Vercel → project → **Logs**, search for `submitLead` or
-   `sendLeadNotification`. The error text says what's wrong (most often a typo in a key or
-   number). Fix the setting and redeploy.
+2. The thank-you page appears, and the lead is in Vercel → project → **Logs** (search for
+   `[lead]`), until a notification channel is added.
 
 ## From now on
 

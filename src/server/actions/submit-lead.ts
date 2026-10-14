@@ -51,8 +51,8 @@ export async function submitLead(values: unknown, meta: SubmitMeta = {}): Promis
     return { ok: false, message: "Bitte prüfen Sie Ihre Angaben.", fieldErrors };
   }
 
-  // 3. Send to email/WhatsApp. The messages are the only record (no database), so if
-  // every channel fails the seller must know: their entries stay in the form and they can retry.
+  // 3. Hand the lead over. The notification is the only record (no database), so if it
+  // fails the seller must know: their entries stay in the form and they can retry.
   try {
     await sendLeadNotification(toLeadSummary(parsed.data));
   } catch (error) {

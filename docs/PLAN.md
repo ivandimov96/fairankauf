@@ -5,8 +5,9 @@ Updated 2026-10-13 after Ivan's scope decisions:
 - **No photos.** Sellers don't upload photos, so there is no file storage.
 - **No admin website.** That drops the admin login, lead inbox, status pipeline, notes,
   deal calculator, profit tracking, dashboard and CSV export from the original spec.
-- **No database.** Leads go to email and WhatsApp (both, 2026-10-14). Only if every channel
-  fails is the seller asked to try again, so a lead is never lost silently.
+- **No database.** How leads reach Ivan is being rebuilt from scratch (2026-10-14: CallMeBot,
+  Resend, Gmail SMTP, WhatsApp Cloud API and Telegram were all removed). Until then leads
+  are only logged.
 
 ## 1. Architecture
 
@@ -19,13 +20,12 @@ Seller's phone
 Server Action submitLead
    1. spam checks (honeypot, optional Turnstile, 5 leads/hour per IP in memory)
    2. Zod parse (same schema as the client)
-   3. send the lead to email + WhatsApp (+ Telegram) at once, 3 tries each
-      → one delivered: thank-you page · all failed: "please try again", entries kept
+   3. sendLeadNotification(lead): channel to be decided; currently logs only
+      → ok: thank-you page · throws: "please try again", entries kept
 ```
 
-- **Notifications** sit behind `NotificationProvider`: `email` (own Gmail over SMTP), `whatsapp_cloud` (official
-  Meta API, template `new_car_lead`), optional `telegram`; `console` when no key is set. Text comes
-  from pure, unit-tested formatters and includes every field the seller entered. Setup: `docs/notifications-setup.md`.
+- **Notifications:** `sendLeadNotification()` in `lib/notifications/` is the one place to plug the
+  next channel in. Text comes from a pure, unit-tested formatter and includes every field the seller entered.
 - **Rate limiting** is an in-memory counter per serverless instance: best effort, resets on
   cold start. The honeypot and optional Turnstile catch bots.
 - **German only.** Copy lives in the pages, option labels in `src/lib/options.ts`.
@@ -47,7 +47,7 @@ tests/unit, tests/e2e
 
 ## 3. Data
 
-No database. A lead exists only as the email/WhatsApp message (and in the seller's
+No database. A lead exists only as the notification message (and in the seller's
 browser as a draft until it is sent). Money is integer cents internally.
 
 ## 4. Testing
@@ -58,16 +58,16 @@ browser as a draft until it is sent). Money is integer cents internally.
 
 ## 5. Risks
 
-1. **The messages are the only record.** No database means no backup: only if email and
-   WhatsApp both fail is the seller asked to retry, and a seller who gives up is gone. Don't
-   delete the emails.
-2. **Gmail SMTP** needs 2-Step Verification plus an App Password, which Google revokes when the account password changes; then email stops until a new one is set. Limit about 500 emails/day.
+1. **The notification is the only record.** No database means no backup; a seller who gets
+   "try again" and gives up is gone. **Right now there is no channel at all**, so the live site
+   must not be advertised before one exists.
+2. **Channel choice is open.** Tried and dropped: CallMeBot (unofficial), Resend and Gmail SMTP (Ivan wants no third-party mail service / extra setup).
 3. **WhatsApp Cloud API needs its own sender number** (not your personal WhatsApp number) and an
    approved template; each message has a small Meta fee.
 4. **GDPR:** the site stores no lead data; deletion requests are handled by deleting the
-   emails/WhatsApp messages. The Datenschutzerklärung must say so and name the providers.
+   notification messages. The Datenschutzerklärung must say so and name the providers.
 5. **Impressum/Datenschutz** placeholders must be replaced with real legal text before launch.
-6. **Accounts needed before deploy:** Vercel and a Google App Password; Meta for Developers for WhatsApp. Cloudflare only for optional Turnstile.
+6. **Accounts needed before deploy:** Vercel; whatever the next channel needs. Cloudflare only for optional Turnstile.
 
 ## 6. Phases
 
@@ -81,6 +81,6 @@ browser as a draft until it is sent). Money is integer cents internally.
 | 5 Admin area | dropped |
 | 6 Deals, profit, dashboard, CSV | dropped |
 | 7 Hardening: Turnstile (optional), rate limiting, honeypot, SEO, error pages, mobile review | done (Lighthouse mobile: 96–98 performance, 100 a11y/SEO/best practices) |
-| 8 Deployment guide (Vercel, email/WhatsApp) | done: docs/DEPLOY.md |
-| Email channel, CallMeBot removed | done 2026-10-14 (Ivan) |
+| 8 Deployment guide (Vercel) | done: docs/DEPLOY.md |
+| Notification channel v2 | open: all channels removed 2026-10-14 at Ivan's request, to start over |
 | Database | removed 2026-10-13 (Ivan: WhatsApp only) |
