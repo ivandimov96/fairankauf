@@ -95,3 +95,22 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
   // Looks like success to the bot; the unit tests check nothing is sent.
   await expect(page.getByRole("heading", { name: "Vielen Dank!", exact: true })).toBeVisible();
 });
+
+test("brands: the list includes newer brands, and any other brand can be typed in", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#qs-brand").selectOption("Andere");
+  await page.getByLabel("Welche Marke?").fill("Trabbi Spezial");
+  await page.getByRole("button", { name: "Jetzt Auto bewerten lassen" }).click();
+  await expect(page.locator("#brand")).toHaveValue("Trabbi Spezial");
+
+  // Back to the list, search a brand that was added recently.
+  await page.getByRole("button", { name: "Zurück zur Markenliste" }).click();
+  await page.getByRole("combobox", { name: "Marke" }).fill("zee");
+  await page.getByRole("option", { name: "Zeekr" }).click();
+  await expect(page.getByRole("combobox", { name: "Marke" })).toHaveValue("Zeekr");
+
+  // "Andere Marke" in the form switches to free text.
+  await page.getByRole("combobox", { name: "Marke" }).fill("xyz");
+  await page.getByRole("option", { name: "Andere Marke (selbst eingeben)" }).click();
+  await expect(page.locator("#brand")).toHaveValue("xyz");
+});

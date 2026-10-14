@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { BRANDS } from "@/lib/options";
+import { BRANDS, OTHER_BRAND } from "@/lib/options";
 
 const thisYear = new Date().getFullYear();
 const YEARS = Array.from({ length: thisYear - 1950 + 1 }, (_, i) => String(thisYear - i));
@@ -20,6 +20,7 @@ const YEARS = Array.from({ length: thisYear - 1950 + 1 }, (_, i) => String(thisY
  */
 export function QuickStart() {
   const router = useRouter();
+  const [brandChoice, setBrandChoice] = React.useState("");
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +28,10 @@ export function QuickStart() {
     const pick = (name: string) => String(data.get(name) ?? "").trim();
     const draft = loadDraft();
     const values = { ...draft?.values };
-    for (const key of ["brand", "firstRegYear", "mileageKm"] as const) {
+    // "Andere Marke": the typed brand is used instead (the form then shows it as free text).
+    const brand = brandChoice === OTHER_BRAND ? pick("otherBrand") : brandChoice;
+    if (brand) values.brand = brand;
+    for (const key of ["firstRegYear", "mileageKm"] as const) {
       const v = pick(key);
       if (v) values[key] = v;
     }
@@ -39,15 +43,22 @@ export function QuickStart() {
     <form onSubmit={onSubmit} className="grid gap-4" aria-label="Schnellstart: Auto bewerten lassen">
       <div className="grid gap-2">
         <Label htmlFor="qs-brand">Marke</Label>
-        <NativeSelect id="qs-brand" name="brand" defaultValue="">
+        <NativeSelect id="qs-brand" value={brandChoice} onChange={(e) => setBrandChoice(e.target.value)}>
           <option value="">Marke wählen</option>
           {BRANDS.map((b) => (
             <option key={b} value={b}>
               {b}
             </option>
           ))}
+          <option value={OTHER_BRAND}>Andere Marke …</option>
         </NativeSelect>
       </div>
+      {brandChoice === OTHER_BRAND && (
+        <div className="grid gap-2">
+          <Label htmlFor="qs-other-brand">Welche Marke?</Label>
+          <Input id="qs-other-brand" name="otherBrand" autoComplete="off" placeholder="Marke eingeben" autoFocus />
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
           <Label htmlFor="qs-year">Erstzulassung</Label>

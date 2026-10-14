@@ -163,7 +163,7 @@ export function BrandPicker({ id, value, onChange, onBlur, error, describedBy }:
                 option === OTHER_BRAND && "border-t text-muted-foreground",
               )}
             >
-              {option === OTHER_BRAND ? "Andere Marke eingeben" : option}
+              {option === OTHER_BRAND ? "Andere Marke (selbst eingeben)" : option}
               {option === value && <CheckIcon aria-hidden className="size-4 text-primary" />}
             </li>
           ))}
