@@ -22,6 +22,6 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     // No channel keys: leads are printed to the log (console), whatever .env.local says.
-    env: { RESEND_API_KEY: "", WHATSAPP_CLOUD_TOKEN: "", TELEGRAM_BOT_TOKEN: "" },
+    env: { SMTP_USER: "", WHATSAPP_CLOUD_TOKEN: "", TELEGRAM_BOT_TOKEN: "" },
   },
 });

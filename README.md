@@ -32,6 +32,6 @@ Every variable is documented in [`.env.example`](.env.example).
 
 ## Deployment and notification setup
 
-Lead notifications (email via Resend, the official WhatsApp Cloud API, optional Telegram): [`docs/notifications-setup.md`](docs/notifications-setup.md).
+Lead notifications (email from your own Gmail, the official WhatsApp Cloud API, optional Telegram): [`docs/notifications-setup.md`](docs/notifications-setup.md).
 
 Go live on Vercel: [`docs/DEPLOY.md`](docs/DEPLOY.md).

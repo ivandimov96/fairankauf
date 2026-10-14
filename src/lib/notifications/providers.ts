@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 import { formatLeadMessage, formatTemplateParams, plainLeadMessage, type LeadSummary } from "./format";
 import type { ChannelConfig } from "./config";
 import type { NotificationProvider } from "./types";
@@ -17,22 +19,35 @@ export function consoleProvider(log: (msg: string) => void = console.log): Notif
   };
 }
 
-/** Email via Resend (https://resend.com). Plain text with every field; replies go to the seller. */
-export function emailProvider(
-  cfg: { apiKey: string; to: string; from: string },
-  fetchImpl: Fetch = fetch,
-): NotificationProvider {
+export type SmtpConfig = { host: string; port: number; user: string; pass: string; to: string; from: string };
+
+/** The part of a nodemailer transport the provider uses; swapped out in tests. */
+export type MailTransport = { sendMail(message: ReturnType<typeof emailPayload>): Promise<unknown> };
+
+function smtpTransport(cfg: SmtpConfig): MailTransport {
+  return nodemailer.createTransport({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
+    auth: { user: cfg.user, pass: cfg.pass },
+    connectionTimeout: TIMEOUT_MS,
+    greetingTimeout: TIMEOUT_MS,
+    socketTimeout: TIMEOUT_MS,
+  });
+}
+
+/**
+ * Email from your own mailbox over SMTP (Gmail with an App Password by default).
+ * Plain text with every field; replies go to the seller.
+ */
+export function emailProvider(cfg: SmtpConfig, transport: MailTransport = smtpTransport(cfg)): NotificationProvider {
   return {
     name: "email",
     async sendNewLead(lead) {
-      const res = await fetchImpl("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify(emailPayload(lead, cfg)),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      if (!res.ok) {
-        throw new Error(`Email (Resend) ${res.status}: ${summarize(await res.text())}`);
+      try {
+        await transport.sendMail(emailPayload(lead, cfg));
+      } catch (error) {
+        throw new Error(`Email (SMTP ${cfg.host}): ${error instanceof Error ? error.message : String(error)}`);
       }
     },
   };
@@ -41,10 +56,10 @@ export function emailProvider(
 export function emailPayload(lead: LeadSummary, cfg: { to: string; from: string }) {
   return {
     from: cfg.from,
-    to: [cfg.to],
+    to: cfg.to,
     subject: `Neue Anfrage: ${lead.brand} ${lead.model}`.replace(/\s+/g, " "),
     text: plainLeadMessage(lead),
-    ...(lead.email ? { reply_to: lead.email } : {}),
+    ...(lead.email ? { replyTo: lead.email } : {}),
   };
 }
 
@@ -122,7 +137,14 @@ export function createProvider(cfg: ChannelConfig): NotificationProvider {
     case "console":
       return consoleProvider();
     case "email":
-      return emailProvider({ apiKey: cfg.RESEND_API_KEY, to: cfg.NOTIFY_EMAIL, from: cfg.EMAIL_FROM });
+      return emailProvider({
+        host: cfg.SMTP_HOST,
+        port: cfg.SMTP_PORT,
+        user: cfg.SMTP_USER,
+        pass: cfg.SMTP_PASS,
+        to: cfg.NOTIFY_EMAIL,
+        from: cfg.EMAIL_FROM,
+      });
     case "telegram":
       return telegramProvider({ botToken: cfg.TELEGRAM_BOT_TOKEN, chatId: cfg.TELEGRAM_CHAT_ID });
     case "whatsapp_cloud":

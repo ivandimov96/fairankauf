@@ -2,21 +2,31 @@ import "server-only";
 
 import { z } from "zod";
 
-// Every channel whose key is set receives each lead: email (Resend), WhatsApp
-// (official Meta Cloud API) and/or Telegram. With none set, leads are printed to
+// Every channel whose key is set receives each lead: email (your own mailbox over
+// SMTP, e.g. Gmail), WhatsApp (official Meta Cloud API) and/or Telegram. With none set, leads are printed to
 // the server log (local development). Each channel is checked on its own, so one
 // broken setup never stops the others.
 
 const e164 = z.string().regex(/^\+[1-9]\d{6,14}$/, "must be E.164, e.g. +4915112345678");
 
-const email = z.object({
-  kind: z.literal("email"),
-  RESEND_API_KEY: z.string().startsWith("re_", "must start with re_"),
-  NOTIFY_EMAIL: z.email("must be an email address"),
-  // Without an own domain, Resend only sends from onboarding@resend.dev, and only
-  // to the email address the Resend account was created with.
-  EMAIL_FROM: z.string().min(3).default("FairAnkauf <onboarding@resend.dev>"),
-});
+const email = z
+  .object({
+    kind: z.literal("email"),
+    // The mailbox that sends: a Gmail address and its App Password by default.
+    SMTP_USER: z.email("must be an email address"),
+    // Google shows App Passwords as "abcd efgh ijkl mnop"; the spaces don't matter.
+    SMTP_PASS: z.string().min(1).transform((v) => v.replace(/\s+/g, "")),
+    SMTP_HOST: z.string().min(1).default("smtp.gmail.com"),
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+    // Where the leads go; the sending mailbox itself unless set.
+    NOTIFY_EMAIL: z.email("must be an email address").optional(),
+    EMAIL_FROM: z.string().min(3).optional(),
+  })
+  .transform((v) => ({
+    ...v,
+    NOTIFY_EMAIL: v.NOTIFY_EMAIL ?? v.SMTP_USER,
+    EMAIL_FROM: v.EMAIL_FROM ?? `FairAnkauf <${v.SMTP_USER}>`,
+  }));
 
 const whatsappCloud = z.object({
   kind: z.literal("whatsapp_cloud"),
@@ -43,7 +53,7 @@ export type ChannelConfig = EmailConfig | WhatsappCloudConfig | TelegramConfig |
 export type ChannelSetup = { ok: true; config: ChannelConfig } | { ok: false; kind: string; error: string };
 
 const CHANNELS = [
-  { kind: "email", key: "RESEND_API_KEY", schema: email },
+  { kind: "email", key: "SMTP_USER", schema: email },
   { kind: "whatsapp_cloud", key: "WHATSAPP_CLOUD_TOKEN", schema: whatsappCloud },
   { kind: "telegram", key: "TELEGRAM_BOT_TOKEN", schema: telegram },
 ] as const;
@@ -59,7 +69,7 @@ export function notificationChannels(source: Record<string, string | undefined> 
   if (setups.length > 0) return setups;
   // On the live site a missing setup must not look like success to the seller.
   if (env.VERCEL_ENV === "production") {
-    return [{ ok: false, kind: "none", error: "No notification channel configured (set RESEND_API_KEY or WHATSAPP_CLOUD_TOKEN)" }];
+    return [{ ok: false, kind: "none", error: "No notification channel configured (set SMTP_USER/SMTP_PASS or WHATSAPP_CLOUD_TOKEN)" }];
   }
   return [{ ok: true, config: { kind: "console" } }];
 }

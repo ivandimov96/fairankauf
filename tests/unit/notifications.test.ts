@@ -103,32 +103,36 @@ describe("providers", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Neue Anfrage: Volkswagen"));
   });
 
-  it("email posts the full lead as plain text to Resend, with replies going to the seller", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ id: "e1" }));
-    const cfg = { apiKey: "re_123", to: "vlado.dimov2@gmail.com", from: "FairAnkauf <onboarding@resend.dev>" };
-    await emailProvider(cfg, fetchMock).sendNewLead({ ...lead, email: "erika@example.de", defects: "Kratzer" });
+  const smtp = {
+    host: "smtp.gmail.com",
+    port: 465,
+    user: "vlado.dimov2@gmail.com",
+    pass: "abcdefghijklmnop",
+    to: "vlado.dimov2@gmail.com",
+    from: "FairAnkauf <vlado.dimov2@gmail.com>",
+  };
 
-    const [url, init] = fetchMock.mock.calls[0]! as [string, RequestInit];
-    expect(url).toBe("https://api.resend.com/emails");
-    expect(init.headers).toMatchObject({ Authorization: "Bearer re_123" });
-    const body = JSON.parse(init.body as string);
-    expect(body).toMatchObject({
-      from: "FairAnkauf <onboarding@resend.dev>",
-      to: ["vlado.dimov2@gmail.com"],
+  it("email sends the full lead as plain text, with replies going to the seller", async () => {
+    const sendMail = vi.fn().mockResolvedValue({ messageId: "m1" });
+    await emailProvider(smtp, { sendMail }).sendNewLead({ ...lead, email: "erika@example.de", defects: "Kratzer" });
+
+    const message = sendMail.mock.calls[0]![0];
+    expect(message).toMatchObject({
+      from: "FairAnkauf <vlado.dimov2@gmail.com>",
+      to: "vlado.dimov2@gmail.com",
       subject: "Neue Anfrage: Volkswagen Golf 1.4 TSI",
-      reply_to: "erika@example.de",
+      replyTo: "erika@example.de",
     });
-    expect(body.text).toContain("Mängel: Kratzer");
-    expect(body.text).not.toContain("*");
-    expect(emailPayload(lead, cfg)).not.toHaveProperty("reply_to");
+    expect(message.text).toContain("Mängel: Kratzer");
+    expect(message.text).not.toContain("*");
+    expect(emailPayload(lead, smtp)).not.toHaveProperty("replyTo");
   });
 
-  it("email throws with Resend's error text", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(Response.json({ message: "You can only send testing emails to your own email address" }, { status: 403 }));
-    const cfg = { apiKey: "re_x", to: "a@b.de", from: "x <onboarding@resend.dev>" };
-    await expect(emailProvider(cfg, fetchMock).sendNewLead(lead)).rejects.toThrow(/Email \(Resend\) 403: .*own email/);
+  it("email throws with the mail server's error text", async () => {
+    const sendMail = vi.fn().mockRejectedValue(new Error("Invalid login: 535-5.7.8 Username and Password not accepted"));
+    await expect(emailProvider(smtp, { sendMail }).sendNewLead(lead)).rejects.toThrow(
+      /Email \(SMTP smtp\.gmail\.com\): Invalid login/,
+    );
   });
 
   it("telegram posts the plain-text message to the chat", async () => {
@@ -193,8 +197,8 @@ describe("notificationChannels", () => {
 
   it("enables every channel whose key is set, and ignores empty values", () => {
     const setups = notificationChannels({
-      RESEND_API_KEY: "re_abc",
-      NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+      SMTP_USER: "vlado.dimov2@gmail.com",
+      SMTP_PASS: "abcd efgh ijkl mnop",
       WHATSAPP_CLOUD_TOKEN: "tok",
       WHATSAPP_CLOUD_PHONE_NUMBER_ID: "123",
       NOTIFY_PHONE: "+38971943038",
@@ -205,9 +209,12 @@ describe("notificationChannels", () => {
         ok: true,
         config: {
           kind: "email",
-          RESEND_API_KEY: "re_abc",
+          SMTP_USER: "vlado.dimov2@gmail.com",
+          SMTP_PASS: "abcdefghijklmnop", // Google's spaces removed
+          SMTP_HOST: "smtp.gmail.com",
+          SMTP_PORT: 465,
           NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
-          EMAIL_FROM: "FairAnkauf <onboarding@resend.dev>",
+          EMAIL_FROM: "FairAnkauf <vlado.dimov2@gmail.com>",
         },
       },
       {
@@ -226,12 +233,15 @@ describe("notificationChannels", () => {
 
   it("reports a broken channel without affecting the others", () => {
     const setups = notificationChannels({
-      RESEND_API_KEY: "re_abc",
-      NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+      SMTP_USER: "vlado.dimov2@gmail.com",
+      SMTP_PASS: "x",
       WHATSAPP_CLOUD_TOKEN: "tok",
       NOTIFY_PHONE: "0151 56041400",
     });
     expect(setups[0]).toMatchObject({ ok: true });
+    expect(notificationChannels({ SMTP_USER: "vlado.dimov2@gmail.com" })).toMatchObject([
+      { ok: false, kind: "email", error: expect.stringMatching(/SMTP_PASS/) },
+    ]);
     expect(setups[1]).toMatchObject({ ok: false, kind: "whatsapp_cloud", error: expect.stringMatching(/E\.164/) });
   });
 
@@ -244,42 +254,51 @@ describe("notificationChannels", () => {
 
 describe("sendLeadNotification", () => {
   const env = {
-    RESEND_API_KEY: "re_abc",
-    NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+    SMTP_USER: "vlado.dimov2@gmail.com",
+    SMTP_PASS: "pw",
     WHATSAPP_CLOUD_TOKEN: "tok",
     WHATSAPP_CLOUD_PHONE_NUMBER_ID: "123",
     NOTIFY_PHONE: "+38971943038",
   };
-  const ok = (url: string) => url.includes("resend") ? Response.json({ id: "e" }) : Response.json({ messages: [{}] });
-  const fail = () => Response.json({ error: { message: "down" } }, { status: 500 });
 
-  async function run(fetchImpl: (url: string) => Response) {
+  async function run(opts: { mailOk: boolean; whatsappOk: boolean }) {
     vi.resetModules();
-    const fetchMock = vi.fn().mockImplementation(async (url: string) => fetchImpl(String(url)));
+    const sendMail = opts.mailOk
+      ? vi.fn().mockResolvedValue({ messageId: "m" })
+      : vi.fn().mockRejectedValue(new Error("Invalid login"));
+    vi.doMock("nodemailer", () => ({ default: { createTransport: () => ({ sendMail }) } }));
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async () =>
+        opts.whatsappOk ? Response.json({ messages: [{}] }) : Response.json({ error: { message: "down" } }, { status: 500 }),
+      );
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const { sendLeadNotification } = await import("@/lib/notifications");
-      return { result: sendLeadNotification(lead, [0, 0], env), fetchMock };
+      return { result: sendLeadNotification(lead, [0, 0], env), sendMail, fetchMock };
     } finally {
       vi.unstubAllGlobals();
+      vi.doUnmock("nodemailer");
     }
   }
 
   it("sends to email and WhatsApp", async () => {
-    const { result, fetchMock } = await run(ok);
+    const { result, sendMail, fetchMock } = await run({ mailOk: true, whatsappOk: true });
     await expect(result).resolves.toBeUndefined();
-    expect(fetchMock.mock.calls.map(([u]) => String(u).split("/")[2])).toEqual(["api.resend.com", "graph.facebook.com"]);
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]![0])).toContain("graph.facebook.com");
   });
 
   it("succeeds when one channel still delivers, after retrying the other 3 times", async () => {
-    const { result, fetchMock } = await run((url) => (url.includes("facebook") ? fail() : ok(url)));
+    const { result, sendMail, fetchMock } = await run({ mailOk: true, whatsappOk: false });
     await expect(result).resolves.toBeUndefined();
-    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes("facebook"))).toHaveLength(3);
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("throws with every channel's error when nothing got through", async () => {
-    const { result } = await run(fail);
-    await expect(result).rejects.toThrow(/email: Email \(Resend\) 500.*\| whatsapp_cloud: WhatsApp Cloud API 500/);
+    const { result } = await run({ mailOk: false, whatsappOk: false });
+    await expect(result).rejects.toThrow(/email: Email \(SMTP smtp\.gmail\.com\): Invalid login \| whatsapp_cloud: WhatsApp Cloud API 500/);
   });
 });

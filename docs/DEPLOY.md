@@ -8,7 +8,7 @@ email and WhatsApp.
 
 Follow [`notifications-setup.md`](notifications-setup.md):
 
-- **Email** (5 minutes): a free Resend account → you end up with an **API key** (`re_...`).
+- **Email** (5 minutes): a Google **App Password** for `vlado.dimov2@gmail.com`.
 - **WhatsApp** (about 30 minutes): a Meta developer app → you end up with a **token**, a
   **phone number ID** and an approved **message template**.
 
@@ -29,8 +29,8 @@ Project → **Settings → Environment Variables**. Add these (Environment: Prod
 | Name | Value |
 |---|---|
 | `APP_URL` | `https://fairankauf.vercel.app` (or your own domain later, no `/` at the end) |
-| `RESEND_API_KEY` | Email: the key from step 1 (`re_...`) |
-| `NOTIFY_EMAIL` | Email: `vlado.dimov2@gmail.com` |
+| `SMTP_USER` | Email: `vlado.dimov2@gmail.com` |
+| `SMTP_PASS` | Email: the App Password from step 1 |
 | `WHATSAPP_CLOUD_TOKEN` | WhatsApp: the permanent token from step 1 |
 | `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | WhatsApp: the phone number ID from step 1 |
 | `NOTIFY_PHONE` | WhatsApp: your own number, e.g. `+38971943038` |

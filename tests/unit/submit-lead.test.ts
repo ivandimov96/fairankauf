@@ -51,7 +51,7 @@ describe("submitLead", () => {
   });
 
   it("tells the seller to try again when sending fails, because nothing is stored", async () => {
-    send.mockRejectedValue(new Error("email: Email (Resend) 403: invalid key"));
+    send.mockRejectedValue(new Error("email: Email (SMTP smtp.gmail.com): Invalid login"));
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await submitLead(valid)).toEqual({
       ok: false,

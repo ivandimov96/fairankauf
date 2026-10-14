@@ -4,7 +4,7 @@ Every new lead is sent to **every channel you set up**, at the same time:
 
 | Channel | What you get | Turned on by |
 |---|---|---|
-| **Email** (Resend) | The complete lead, every field | `RESEND_API_KEY` |
+| **Email** (from your Gmail) | The complete lead, every field | `SMTP_USER` + `SMTP_PASS` |
 | **WhatsApp** (official Meta Cloud API) | The main details, with a link to reply on WhatsApp | `WHATSAPP_CLOUD_TOKEN` |
 | Telegram (optional) | The complete lead | `TELEGRAM_BOT_TOKEN` |
 
@@ -17,28 +17,37 @@ So with email and WhatsApp both set up, one of them failing loses nothing.
 
 ---
 
-## 1. Email (Resend, free, 5 minutes)
+## 1. Email (from your own Gmail, 5 minutes)
 
-1. Sign up at <https://resend.com/signup> **with the email address that should receive the
-   leads** (`vlado.dimov2@gmail.com`). This matters: without your own domain, Resend only
-   delivers to the address the account was created with.
-2. Confirm the sign-up email.
-3. **API Keys → Create API Key**, name `fairankauf`, permission **Sending access**.
-   Copy the key (starts with `re_`). Treat it like a password.
+The site sends each lead as an email **from your Gmail address to itself**
+(`vlado.dimov2@gmail.com`), so no extra service is needed. Google only allows this with an
+**App Password**, a separate 16-character password just for this site:
+
+1. Open <https://myaccount.google.com/security> (signed in as `vlado.dimov2@gmail.com`).
+   Under "How you sign in to Google", **2-Step Verification** must be **On**. If it's off,
+   turn it on first (takes 2 minutes, with your phone).
+2. Open <https://myaccount.google.com/apppasswords>. App name: `FairAnkauf` → **Create**.
+3. Google shows a password like `abcd efgh ijkl mnop`. Copy it; it is shown only once.
+   Treat it like a password and never paste it in a chat.
 
 ### Configure
 
 ```
-RESEND_API_KEY=<the key, re_...>
-NOTIFY_EMAIL=vlado.dimov2@gmail.com
+SMTP_USER=vlado.dimov2@gmail.com
+SMTP_PASS=<the 16-character App Password; spaces don't matter>
 ```
 
-Emails come from `FairAnkauf <onboarding@resend.dev>` with the subject
+Emails come from `FairAnkauf <vlado.dimov2@gmail.com>` with the subject
 "Neue Anfrage: <Marke> <Modell>". If the seller entered an email, **Reply** goes straight
-to them. Check your spam folder the first time and mark it "Not spam".
+to them. Gmail allows about 500 emails a day, plenty for leads.
 
-Later, with your own domain (e.g. fairankauf.de): verify it in Resend → Domains and set
-`EMAIL_FROM=FairAnkauf <anfragen@fairankauf.de>`. Then you can also send to any address.
+Optional: `NOTIFY_EMAIL` to deliver to a different address, `EMAIL_FROM` to change the
+sender name. Any other mailbox works too: set `SMTP_HOST` and `SMTP_PORT` (default
+`smtp.gmail.com`, `465`).
+
+If the log says `Invalid login` / `Username and Password not accepted`: the App Password
+is wrong or was revoked (changing the Google password revokes all App Passwords), or
+2-Step Verification was turned off. Create a new App Password and redeploy.
 
 ### What the message looks like
 

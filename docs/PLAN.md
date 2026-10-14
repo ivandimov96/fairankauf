@@ -23,7 +23,7 @@ Server Action submitLead
       → one delivered: thank-you page · all failed: "please try again", entries kept
 ```
 
-- **Notifications** sit behind `NotificationProvider`: `email` (Resend), `whatsapp_cloud` (official
+- **Notifications** sit behind `NotificationProvider`: `email` (own Gmail over SMTP), `whatsapp_cloud` (official
   Meta API, template `new_car_lead`), optional `telegram`; `console` when no key is set. Text comes
   from pure, unit-tested formatters and includes every field the seller entered. Setup: `docs/notifications-setup.md`.
 - **Rate limiting** is an in-memory counter per serverless instance: best effort, resets on
@@ -61,13 +61,13 @@ browser as a draft until it is sent). Money is integer cents internally.
 1. **The messages are the only record.** No database means no backup: only if email and
    WhatsApp both fail is the seller asked to retry, and a seller who gives up is gone. Don't
    delete the emails.
-2. **Resend free tier** sends only to the account's own address until a domain is verified, and has a daily limit (100/day at the time of writing).
+2. **Gmail SMTP** needs 2-Step Verification plus an App Password, which Google revokes when the account password changes; then email stops until a new one is set. Limit about 500 emails/day.
 3. **WhatsApp Cloud API needs its own sender number** (not your personal WhatsApp number) and an
    approved template; each message has a small Meta fee.
 4. **GDPR:** the site stores no lead data; deletion requests are handled by deleting the
    emails/WhatsApp messages. The Datenschutzerklärung must say so and name the providers.
 5. **Impressum/Datenschutz** placeholders must be replaced with real legal text before launch.
-6. **Accounts needed before deploy:** Vercel, Resend; Meta for Developers for WhatsApp. Cloudflare only for optional Turnstile.
+6. **Accounts needed before deploy:** Vercel and a Google App Password; Meta for Developers for WhatsApp. Cloudflare only for optional Turnstile.
 
 ## 6. Phases
 

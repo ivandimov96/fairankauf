@@ -30,7 +30,7 @@ export default function DatenschutzPage() {
       <ul className="mt-2 list-disc space-y-1 pl-5">
         <li>Hosting: Vercel Inc. (Server in Frankfurt am Main)</li>
         <li>Spamschutz: Cloudflare Turnstile (Cloudflare Inc.)</li>
-        <li>E-Mail-Versand: Resend Inc. (USA)</li>
+        <li>E-Mail-Versand: Google Ireland Ltd. (Gmail)</li>
         <li>Benachrichtigung per WhatsApp: Meta Platforms Ireland Ltd. (WhatsApp Business Platform)</li>
       </ul>
       <p className="mt-2">[Angaben zu Auftragsverarbeitung und Drittlandübermittlung ergänzen]</p>
