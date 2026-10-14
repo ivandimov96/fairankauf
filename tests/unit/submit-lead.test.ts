@@ -61,8 +61,15 @@ describe("submitLead", () => {
 
   it("drops honeypot submissions without sending", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(await submitLead(valid, { website: "https://spam.example" })).toEqual({ ok: true });
+    expect(await submitLead(valid, { honeypot: "https://spam.example" })).toEqual({ ok: true });
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("still sends when browser autofill copied the seller's own data into the honeypot", async () => {
+    send.mockResolvedValue(undefined);
+    const withEmail = { ...valid, email: "erika@example.de" };
+    expect(await submitLead(withEmail, { honeypot: "Erika@example.de " })).toEqual({ ok: true });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   it("returns field errors and sends nothing for invalid input", async () => {

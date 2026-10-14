@@ -12,7 +12,7 @@ export type SubmitLeadResult =
 /** Spam signals sent alongside the form values. */
 export type SubmitMeta = {
   /** Honeypot: a field hidden from people. Bots fill it in. */
-  website?: string;
+  honeypot?: string;
   turnstileToken?: string;
 };
 
@@ -20,7 +20,7 @@ const MAX_PER_HOUR = 5;
 
 export async function submitLead(values: unknown, meta: SubmitMeta = {}): Promise<SubmitLeadResult> {
   // 1. Spam checks
-  if (meta.website) {
+  if (isBot(meta.honeypot, values)) {
     // Pretend it worked so the bot doesn't learn anything.
     console.warn("submitLead: honeypot filled, dropping submission");
     return { ok: true };
@@ -63,4 +63,18 @@ export async function submitLead(values: unknown, meta: SubmitMeta = {}): Promis
     };
   }
   return { ok: true };
+}
+
+/**
+ * The honeypot is filled: a bot, unless the value is one of the seller's own
+ * entries, which means browser autofill copied it there (a real person).
+ */
+function isBot(honeypot: string | undefined, values: unknown): boolean {
+  const filled = honeypot?.trim().toLowerCase();
+  if (!filled) return false;
+  const own =
+    values && typeof values === "object"
+      ? Object.values(values).filter((v): v is string => typeof v === "string").map((v) => v.trim().toLowerCase())
+      : [];
+  return !own.includes(filled);
 }

@@ -90,7 +90,7 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
     ),
   );
   await page.goto("/verkaufen");
-  await page.locator("#website").fill("https://spam.example", { force: true });
+  await page.locator("#fa-hp").fill("https://spam.example", { force: true });
   await page.getByRole("button", { name: "Angebot anfordern" }).click();
   // Looks like success to the bot; the unit tests check nothing is sent.
   await expect(page.getByRole("heading", { name: "Vielen Dank!", exact: true })).toBeVisible();

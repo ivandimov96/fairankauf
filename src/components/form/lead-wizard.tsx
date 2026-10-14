@@ -113,7 +113,7 @@ export function LeadWizard() {
     startTransition(async () => {
       // Send the raw form values; the server parses them with the same schema.
       const result = await submitLead(form.getValues(), {
-        website: honeypotRef.current?.value,
+        honeypot: honeypotRef.current?.value,
         turnstileToken,
       });
       if (result.ok) {
@@ -551,8 +551,20 @@ export function LeadWizard() {
 
       {/* Honeypot: invisible to people, bots fill it in. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        <label htmlFor="website">Webseite</label>
-        <input ref={honeypotRef} id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+        {/* Deliberately meaningless name and label: browsers and password managers
+            autofill fields called "website" or "email", which made real sellers look like bots. */}
+        <label htmlFor="fa-hp">Dieses Feld bitte leer lassen</label>
+        <input
+          ref={honeypotRef}
+          id="fa-hp"
+          name="fa-hp"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
+        />
       </div>
 
       {isLast && <Turnstile onToken={setTurnstileToken} />}
