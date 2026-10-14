@@ -1,5 +1,5 @@
-import { formatLeadMessage, formatTemplateParams, type LeadSummary } from "./format";
-import type { NotificationConfig } from "./config";
+import { formatLeadMessage, formatTemplateParams, plainLeadMessage, type LeadSummary } from "./format";
+import type { ChannelConfig } from "./config";
 import type { NotificationProvider } from "./types";
 
 const TIMEOUT_MS = 10_000;
@@ -17,26 +17,34 @@ export function consoleProvider(log: (msg: string) => void = console.log): Notif
   };
 }
 
-/** Free CallMeBot API for personal WhatsApp notifications. https://www.callmebot.com */
-export function callmebotProvider(
-  cfg: { phone: string; apiKey: string },
+/** Email via Resend (https://resend.com). Plain text with every field; replies go to the seller. */
+export function emailProvider(
+  cfg: { apiKey: string; to: string; from: string },
   fetchImpl: Fetch = fetch,
 ): NotificationProvider {
   return {
-    name: "callmebot",
+    name: "email",
     async sendNewLead(lead) {
-      const url = new URL("https://api.callmebot.com/whatsapp.php");
-      url.searchParams.set("phone", cfg.phone);
-      url.searchParams.set("text", formatLeadMessage(lead));
-      url.searchParams.set("apikey", cfg.apiKey);
-
-      const res = await fetchImpl(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
-      const body = await res.text();
-      // CallMeBot sometimes answers 200 with an error page, so check the text too.
-      if (!res.ok || /apikey is invalid|not (yet )?activated|error:/i.test(body)) {
-        throw new Error(`CallMeBot ${res.status}: ${summarize(body)}`);
+      const res = await fetchImpl("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(emailPayload(lead, cfg)),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) {
+        throw new Error(`Email (Resend) ${res.status}: ${summarize(await res.text())}`);
       }
     },
+  };
+}
+
+export function emailPayload(lead: LeadSummary, cfg: { to: string; from: string }) {
+  return {
+    from: cfg.from,
+    to: [cfg.to],
+    subject: `Neue Anfrage: ${lead.brand} ${lead.model}`.replace(/\s+/g, " "),
+    text: plainLeadMessage(lead),
+    ...(lead.email ? { reply_to: lead.email } : {}),
   };
 }
 
@@ -64,7 +72,7 @@ export function telegramProvider(
 export function telegramPayload(lead: LeadSummary, chatId: string) {
   // Plain text: the WhatsApp *bold* markers would show up literally, and Telegram's
   // Markdown mode rejects messages whose user text contains stray _ or *.
-  return { chat_id: chatId, text: formatLeadMessage(lead).replace(/\*/g, ""), disable_web_page_preview: true };
+  return { chat_id: chatId, text: plainLeadMessage(lead), disable_web_page_preview: true };
 }
 
 /** Official Meta WhatsApp Cloud API, using the approved `new_car_lead` template. */
@@ -109,24 +117,22 @@ export function cloudTemplatePayload(
   };
 }
 
-export function createProvider(cfg: NotificationConfig): NotificationProvider {
-  switch (cfg.NOTIFICATION_PROVIDER) {
+export function createProvider(cfg: ChannelConfig): NotificationProvider {
+  switch (cfg.kind) {
     case "console":
       return consoleProvider();
-    case "callmebot":
-      return callmebotProvider({ phone: cfg.NOTIFY_PHONE, apiKey: cfg.CALLMEBOT_API_KEY });
+    case "email":
+      return emailProvider({ apiKey: cfg.RESEND_API_KEY, to: cfg.NOTIFY_EMAIL, from: cfg.EMAIL_FROM });
     case "telegram":
       return telegramProvider({ botToken: cfg.TELEGRAM_BOT_TOKEN, chatId: cfg.TELEGRAM_CHAT_ID });
     case "whatsapp_cloud":
-      return whatsappCloudProvider(
-        {
-          phone: cfg.NOTIFY_PHONE,
-          token: cfg.WHATSAPP_CLOUD_TOKEN,
-          phoneNumberId: cfg.WHATSAPP_CLOUD_PHONE_NUMBER_ID,
-          template: cfg.WHATSAPP_CLOUD_TEMPLATE,
-          lang: cfg.WHATSAPP_CLOUD_TEMPLATE_LANG,
-        },
-      );
+      return whatsappCloudProvider({
+        phone: cfg.NOTIFY_PHONE,
+        token: cfg.WHATSAPP_CLOUD_TOKEN,
+        phoneNumberId: cfg.WHATSAPP_CLOUD_PHONE_NUMBER_ID,
+        template: cfg.WHATSAPP_CLOUD_TEMPLATE,
+        lang: cfg.WHATSAPP_CLOUD_TEMPLATE_LANG,
+      });
   }
 }
 

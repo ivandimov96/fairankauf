@@ -21,6 +21,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
-    env: { NOTIFICATION_PROVIDER: "console" },
+    // No channel keys: leads are printed to the log (console), whatever .env.local says.
+    env: { RESEND_API_KEY: "", WHATSAPP_CLOUD_TOKEN: "", TELEGRAM_BOT_TOKEN: "" },
   },
 });

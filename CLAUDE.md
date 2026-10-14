@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Car-buying lead app for **FairAnkauf**, a solo founder's used-car buying business in Germany. Public German landing page + multi-step lead form; every lead is sent to Ivan's WhatsApp (or Telegram). **There is no database, no admin website, no photos, no pipeline or profit tracking** (Ivan's decisions, 2026-10-13); don't add them back unless he asks. Concept similar to wirkaufendeinauto.de, but **never copy their name, logo, colors, wording, images or layout**. Full plan: `docs/PLAN.md`. Next.js 16 differs from older versions: read the bundled docs in `node_modules/next/dist/docs/` before using an API (see `AGENTS.md`).
+Car-buying lead app for **FairAnkauf**, a solo founder's used-car buying business in Germany. Public German landing page + multi-step lead form; every lead is sent to Ivan by email (vlado.dimov2@gmail.com, via Resend) and WhatsApp (official Meta Cloud API). **There is no database, no admin website, no photos, no pipeline or profit tracking** (Ivan's decisions, 2026-10-13); don't add them back unless he asks. Concept similar to wirkaufendeinauto.de, but **never copy their name, logo, colors, wording, images or layout**. Full plan: `docs/PLAN.md`. Next.js 16 differs from older versions: read the bundled docs in `node_modules/next/dist/docs/` before using an API (see `AGENTS.md`).
 
 ## Working agreement
 
@@ -21,7 +21,7 @@ pnpm build
 pnpm lint
 pnpm typecheck      # tsc --noEmit
 pnpm test           # vitest run
-pnpm test:e2e       # playwright (builds + starts on :3100 with the console provider; in cloud sandboxes set PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium)
+pnpm test:e2e       # playwright (builds + starts on :3100 without channel keys = console; in cloud sandboxes set PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium)
 ```
 
 ## Conventions
@@ -32,9 +32,9 @@ pnpm test:e2e       # playwright (builds + starts on :3100 with the console prov
 - **Phones:** store E.164 (`+49…`). Parse with libphonenumber-js, default country DE, international accepted.
 - **Validation:** one Zod schema per form in `lib/validation/`, used by react-hook-form and re-parsed in the Server Action. Never trust client input.
 - **Security:** no secrets in client code or the repo; env access is Zod-validated where it is read (`lib/notifications/config.ts`). Server-only modules import `server-only`.
-- **Lead submit order:** spam checks → validate → send notification (3 tries). Nothing is stored, so if sending fails the seller gets "try again" and keeps their form entries. The message must carry every field the seller entered.
-- **Notifications:** `NotificationProvider` interface in `lib/notifications/`; impls `console`, `callmebot`, `telegram`, `whatsapp_cloud`, chosen by `NOTIFICATION_PROVIDER`. Message text only from `formatLeadMessage()` (pure, unit-tested).
-- **GDPR:** no tracking cookies; the site stores no lead data; deletion requests are handled in WhatsApp.
+- **Lead submit order:** spam checks → validate → send to every configured channel at once (3 tries each). Nothing is stored: the seller sees success when at least one channel delivered, and "try again" (entries kept) only when all failed. The email/Telegram text must carry every field the seller entered; the WhatsApp template shows the main ones.
+- **Notifications:** `NotificationProvider` interface in `lib/notifications/`; impls `console`, `email` (Resend), `whatsapp_cloud`, `telegram`. A channel is on when its key (`RESEND_API_KEY`, `WHATSAPP_CLOUD_TOKEN`, `TELEGRAM_BOT_TOKEN`) is set; none set = console. CallMeBot was removed 2026-10-14 (Ivan). Message text only from `formatLeadMessage()` / `plainLeadMessage()` (pure, unit-tested).
+- **GDPR:** no tracking cookies; the site stores no lead data; deletion requests are handled by deleting the email/WhatsApp message.
 - **UI:** mobile-first, min 44px touch targets, visible focus states, labels on every input.
 
 ## Architecture notes

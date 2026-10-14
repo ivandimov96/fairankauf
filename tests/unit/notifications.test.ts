@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { notificationConfig } from "@/lib/notifications/config";
+import { notificationChannels } from "@/lib/notifications/config";
 import { formatLeadMessage, formatTemplateParams, type LeadSummary } from "@/lib/notifications/format";
 import {
   GRAPH_API_VERSION,
-  callmebotProvider,
   cloudTemplatePayload,
   consoleProvider,
+  emailPayload,
+  emailProvider,
   telegramPayload,
   telegramProvider,
   whatsappCloudProvider,
@@ -102,22 +103,32 @@ describe("providers", () => {
     expect(log).toHaveBeenCalledWith(expect.stringContaining("Neue Anfrage: Volkswagen"));
   });
 
-  it("callmebot calls the API with phone, text and key", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("Message queued. You will receive it in a few seconds."));
-    await callmebotProvider({ phone: "+4915156041400", apiKey: "123456" }, fetchMock).sendNewLead(lead);
+  it("email posts the full lead as plain text to Resend, with replies going to the seller", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ id: "e1" }));
+    const cfg = { apiKey: "re_123", to: "vlado.dimov2@gmail.com", from: "FairAnkauf <onboarding@resend.dev>" };
+    await emailProvider(cfg, fetchMock).sendNewLead({ ...lead, email: "erika@example.de", defects: "Kratzer" });
 
-    const url = fetchMock.mock.calls[0]![0] as URL;
-    expect(url.origin + url.pathname).toBe("https://api.callmebot.com/whatsapp.php");
-    expect(url.searchParams.get("phone")).toBe("+4915156041400");
-    expect(url.searchParams.get("apikey")).toBe("123456");
-    expect(url.searchParams.get("text")).toBe(formatLeadMessage(lead));
+    const [url, init] = fetchMock.mock.calls[0]! as [string, RequestInit];
+    expect(url).toBe("https://api.resend.com/emails");
+    expect(init.headers).toMatchObject({ Authorization: "Bearer re_123" });
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      from: "FairAnkauf <onboarding@resend.dev>",
+      to: ["vlado.dimov2@gmail.com"],
+      subject: "Neue Anfrage: Volkswagen Golf 1.4 TSI",
+      reply_to: "erika@example.de",
+    });
+    expect(body.text).toContain("Mängel: Kratzer");
+    expect(body.text).not.toContain("*");
+    expect(emailPayload(lead, cfg)).not.toHaveProperty("reply_to");
   });
 
-  it("callmebot throws on an error answer, even with HTTP 200", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("<p>APIKey is invalid.</p>"));
-    await expect(
-      callmebotProvider({ phone: "+4915156041400", apiKey: "x" }, fetchMock).sendNewLead(lead),
-    ).rejects.toThrow("CallMeBot 200: APIKey is invalid.");
+  it("email throws with Resend's error text", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ message: "You can only send testing emails to your own email address" }, { status: 403 }));
+    const cfg = { apiKey: "re_x", to: "a@b.de", from: "x <onboarding@resend.dev>" };
+    await expect(emailProvider(cfg, fetchMock).sendNewLead(lead)).rejects.toThrow(/Email \(Resend\) 403: .*own email/);
   });
 
   it("telegram posts the plain-text message to the chat", async () => {
@@ -174,48 +185,101 @@ describe("providers", () => {
   });
 });
 
-describe("notificationConfig", () => {
-  it("defaults to console", () => {
-    expect(notificationConfig({})).toEqual({ NOTIFICATION_PROVIDER: "console" });
+describe("notificationChannels", () => {
+  it("prints to the log when nothing is configured, except on the live site", () => {
+    expect(notificationChannels({})).toEqual([{ ok: true, config: { kind: "console" } }]);
+    expect(notificationChannels({ VERCEL_ENV: "production" })).toMatchObject([{ ok: false, kind: "none" }]);
   });
 
-  it("requires the API key for callmebot and ignores empty values", () => {
-    expect(() =>
-      notificationConfig({ NOTIFICATION_PROVIDER: "callmebot", NOTIFY_PHONE: "+4915156041400", CALLMEBOT_API_KEY: "" }),
-    ).toThrow(/CALLMEBOT_API_KEY/);
+  it("enables every channel whose key is set, and ignores empty values", () => {
+    const setups = notificationChannels({
+      RESEND_API_KEY: "re_abc",
+      NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+      WHATSAPP_CLOUD_TOKEN: "tok",
+      WHATSAPP_CLOUD_PHONE_NUMBER_ID: "123",
+      NOTIFY_PHONE: "+38971943038",
+      TELEGRAM_BOT_TOKEN: "",
+    });
+    expect(setups).toEqual([
+      {
+        ok: true,
+        config: {
+          kind: "email",
+          RESEND_API_KEY: "re_abc",
+          NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+          EMAIL_FROM: "FairAnkauf <onboarding@resend.dev>",
+        },
+      },
+      {
+        ok: true,
+        config: {
+          kind: "whatsapp_cloud",
+          WHATSAPP_CLOUD_TOKEN: "tok",
+          WHATSAPP_CLOUD_PHONE_NUMBER_ID: "123",
+          NOTIFY_PHONE: "+38971943038",
+          WHATSAPP_CLOUD_TEMPLATE: "new_car_lead",
+          WHATSAPP_CLOUD_TEMPLATE_LANG: "de",
+        },
+      },
+    ]);
+  });
+
+  it("reports a broken channel without affecting the others", () => {
+    const setups = notificationChannels({
+      RESEND_API_KEY: "re_abc",
+      NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+      WHATSAPP_CLOUD_TOKEN: "tok",
+      NOTIFY_PHONE: "0151 56041400",
+    });
+    expect(setups[0]).toMatchObject({ ok: true });
+    expect(setups[1]).toMatchObject({ ok: false, kind: "whatsapp_cloud", error: expect.stringMatching(/E\.164/) });
   });
 
   it("parses the telegram settings", () => {
-    expect(
-      notificationConfig({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA-b_c", TELEGRAM_CHAT_ID: "987654" }),
-    ).toEqual({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA-b_c", TELEGRAM_CHAT_ID: "987654" });
-    expect(() =>
-      notificationConfig({ NOTIFICATION_PROVIDER: "telegram", TELEGRAM_BOT_TOKEN: "123456:AA", TELEGRAM_CHAT_ID: "@me" }),
-    ).toThrow(/TELEGRAM_CHAT_ID/);
-  });
-
-  it("rejects a phone number that is not E.164", () => {
-    expect(() =>
-      notificationConfig({ NOTIFICATION_PROVIDER: "callmebot", NOTIFY_PHONE: "0151 56041400", CALLMEBOT_API_KEY: "k" }),
-    ).toThrow(/E\.164/);
+    expect(notificationChannels({ TELEGRAM_BOT_TOKEN: "123456:AA-b_c", TELEGRAM_CHAT_ID: "@me" })).toMatchObject([
+      { ok: false, error: expect.stringMatching(/TELEGRAM_CHAT_ID/) },
+    ]);
   });
 });
 
 describe("sendLeadNotification", () => {
-  it("retries and then throws the provider's error", async () => {
+  const env = {
+    RESEND_API_KEY: "re_abc",
+    NOTIFY_EMAIL: "vlado.dimov2@gmail.com",
+    WHATSAPP_CLOUD_TOKEN: "tok",
+    WHATSAPP_CLOUD_PHONE_NUMBER_ID: "123",
+    NOTIFY_PHONE: "+38971943038",
+  };
+  const ok = (url: string) => url.includes("resend") ? Response.json({ id: "e" }) : Response.json({ messages: [{}] });
+  const fail = () => Response.json({ error: { message: "down" } }, { status: 500 });
+
+  async function run(fetchImpl: (url: string) => Response) {
     vi.resetModules();
-    vi.stubEnv("NOTIFICATION_PROVIDER", "callmebot");
-    vi.stubEnv("NOTIFY_PHONE", "+4915156041400");
-    vi.stubEnv("CALLMEBOT_API_KEY", "k");
-    const fetchMock = vi.fn().mockImplementation(async () => new Response("APIKey is invalid"));
+    const fetchMock = vi.fn().mockImplementation(async (url: string) => fetchImpl(String(url)));
     vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const { sendLeadNotification } = await import("@/lib/notifications");
-      await expect(sendLeadNotification(lead, [0, 0])).rejects.toThrow(/CallMeBot 200: APIKey is invalid/);
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      return { result: sendLeadNotification(lead, [0, 0], env), fetchMock };
     } finally {
       vi.unstubAllGlobals();
-      vi.unstubAllEnvs();
     }
+  }
+
+  it("sends to email and WhatsApp", async () => {
+    const { result, fetchMock } = await run(ok);
+    await expect(result).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls.map(([u]) => String(u).split("/")[2])).toEqual(["api.resend.com", "graph.facebook.com"]);
+  });
+
+  it("succeeds when one channel still delivers, after retrying the other 3 times", async () => {
+    const { result, fetchMock } = await run((url) => (url.includes("facebook") ? fail() : ok(url)));
+    await expect(result).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes("facebook"))).toHaveLength(3);
+  });
+
+  it("throws with every channel's error when nothing got through", async () => {
+    const { result } = await run(fail);
+    await expect(result).rejects.toThrow(/email: Email \(Resend\) 500.*\| whatsapp_cloud: WhatsApp Cloud API 500/);
   });
 });

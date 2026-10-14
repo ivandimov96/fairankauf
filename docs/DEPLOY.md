@@ -2,16 +2,17 @@
 
 About 10 minutes. You need a computer browser (the phone works too, but it's fiddly).
 Everything here is free to start. There is no database: every lead goes straight to your
-WhatsApp (or Telegram).
+email and WhatsApp.
 
-## 1. Set up where leads arrive (on your phone)
+## 1. Set up where leads arrive
 
-Pick one, following [`whatsapp-setup.md`](whatsapp-setup.md):
+Follow [`notifications-setup.md`](notifications-setup.md):
 
-- **CallMeBot** for WhatsApp (Option 1, 2 minutes): you end up with an **API key**.
-- **Telegram** (Option 2, 5 minutes, if CallMeBot doesn't answer): you end up with a **bot token** and your **chat Id**.
+- **Email** (5 minutes): a free Resend account → you end up with an **API key** (`re_...`).
+- **WhatsApp** (about 30 minutes): a Meta developer app → you end up with a **token**, a
+  **phone number ID** and an approved **message template**.
 
-Keep these for step 3.
+Email alone is enough to go live; WhatsApp can be added later. Keep the values for step 3.
 
 ## 2. Create the Vercel project
 
@@ -28,11 +29,11 @@ Project → **Settings → Environment Variables**. Add these (Environment: Prod
 | Name | Value |
 |---|---|
 | `APP_URL` | `https://fairankauf.vercel.app` (or your own domain later, no `/` at the end) |
-| `NOTIFICATION_PROVIDER` | `callmebot` (or `telegram`) |
-| `NOTIFY_PHONE` | CallMeBot only: the number that activated CallMeBot, e.g. `+38971943038` |
-| `CALLMEBOT_API_KEY` | CallMeBot only: the key from step 1 |
-| `TELEGRAM_BOT_TOKEN` | Telegram only: the bot token from step 1 |
-| `TELEGRAM_CHAT_ID` | Telegram only: your Id from step 1 |
+| `RESEND_API_KEY` | Email: the key from step 1 (`re_...`) |
+| `NOTIFY_EMAIL` | Email: `vlado.dimov2@gmail.com` |
+| `WHATSAPP_CLOUD_TOKEN` | WhatsApp: the permanent token from step 1 |
+| `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | WhatsApp: the phone number ID from step 1 |
+| `NOTIFY_PHONE` | WhatsApp: your own number, e.g. `+38971943038` |
 
 The real name of your site is shown on the project's overview page (e.g.
 `fairankauf.vercel.app` or `fairankauf-xyz.vercel.app`); use that for `APP_URL`.
@@ -46,10 +47,12 @@ if you haven't yet). Wait until it says **Ready**.
 
 1. Open your site on your phone, click **"Jetzt Auto bewerten lassen"** and submit a test car
    with your own phone number.
-2. The WhatsApp (or Telegram) message should arrive within seconds.
-3. If the form says "Das hat leider nicht geklappt": Vercel → project → **Logs**, search for
-   `submitLead`. The error text says what's wrong (most often a typo in the key, token,
-   chat Id or phone number). Fix the setting and redeploy.
+2. The email (and the WhatsApp message) should arrive within seconds. Check the spam
+   folder the first time.
+3. If one channel is silent but the other works, or the form says "Das hat leider nicht
+   geklappt": Vercel → project → **Logs**, search for `submitLead` or
+   `sendLeadNotification`. The error text says what's wrong (most often a typo in a key or
+   number). Fix the setting and redeploy.
 
 ## From now on
 

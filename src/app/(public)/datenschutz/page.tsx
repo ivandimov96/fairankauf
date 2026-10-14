@@ -21,8 +21,8 @@ export default function DatenschutzPage() {
       </p>
       <h2 className="mt-8 text-xl font-bold">3. Speicherdauer und Löschung</h2>
       <p className="mt-2">
-        Wir speichern Ihre Angaben nicht auf unserer Website. Sie werden direkt per WhatsApp an uns
-        übermittelt und dort so lange aufbewahrt, wie es für die Bearbeitung Ihrer Anfrage nötig ist
+        Wir speichern Ihre Angaben nicht auf unserer Website. Sie werden direkt per E-Mail und WhatsApp
+        an uns übermittelt und dort so lange aufbewahrt, wie es für die Bearbeitung Ihrer Anfrage nötig ist
         [Speicherdauer]. Sie können jederzeit die Löschung Ihrer Daten verlangen. Eine formlose Nachricht an
         [E-Mail-Adresse] genügt.
       </p>
@@ -30,10 +30,8 @@ export default function DatenschutzPage() {
       <ul className="mt-2 list-disc space-y-1 pl-5">
         <li>Hosting: Vercel Inc. (Server in Frankfurt am Main)</li>
         <li>Spamschutz: Cloudflare Turnstile (Cloudflare Inc.)</li>
-        <li>
-          Benachrichtigung: Ihre Angaben werden per WhatsApp (Meta Platforms Ireland Ltd.) an uns übermittelt,
-          über den Dienst CallMeBot.
-        </li>
+        <li>E-Mail-Versand: Resend Inc. (USA)</li>
+        <li>Benachrichtigung per WhatsApp: Meta Platforms Ireland Ltd. (WhatsApp Business Platform)</li>
       </ul>
       <p className="mt-2">[Angaben zu Auftragsverarbeitung und Drittlandübermittlung ergänzen]</p>
       <h2 className="mt-8 text-xl font-bold">5. Ihre Rechte</h2>
