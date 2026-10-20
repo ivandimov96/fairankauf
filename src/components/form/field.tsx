@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type FieldProps = {
   id: string;
@@ -8,13 +9,16 @@ type FieldProps = {
   optional?: boolean;
   hint?: string;
   error?: string;
+  className?: string;
   children: React.ReactNode;
 };
 
 /** Label + control + hint/error, wired up for screen readers via ids. */
-export function Field({ id, label, optional, hint, error, children }: FieldProps) {
+export function Field({ id, label, optional, hint, error, className, children }: FieldProps) {
   return (
-    <div className="grid gap-2">
+    // content-start: in a row of fields, a taller neighbour (e.g. with an error
+    // message) must not push this field's input down.
+    <div className={cn("grid content-start gap-2", className)}>
       <Label htmlFor={id}>
         {label}
         {optional && <span className="font-normal text-muted-foreground">(optional)</span>}
@@ -30,6 +34,24 @@ export function Field({ id, label, optional, hint, error, children }: FieldProps
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Error messages for fields that sit side by side (PLZ + Ort, Jahr + Monat).
+ * Shown once below the whole row, so the inputs stay on one line.
+ */
+export function FieldErrors({ errors }: { errors: [id: string, message: string | undefined][] }) {
+  const shown = errors.filter((e): e is [string, string] => !!e[1]);
+  if (shown.length === 0) return null;
+  return (
+    <div className="grid gap-1">
+      {shown.map(([id, message]) => (
+        <p key={id} id={`${id}-error`} role="alert" className="text-sm text-destructive">
+          {message}
+        </p>
+      ))}
     </div>
   );
 }

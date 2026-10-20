@@ -34,6 +34,7 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await page.getByLabel("Kilometerstand (km)").fill("123.000");
   await choose(page, "Benzin");
   await choose(page, "Manuell");
+  await choose(page, "Allrad (4x4)");
   await page.getByRole("textbox", { name: /^Leistung/ }).fill("125");
   await page.getByRole("button", { name: "Weiter" }).click();
 
@@ -51,7 +52,10 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await expect(page.getByLabel("Anzahl Vorbesitzer")).toHaveValue("2");
   await page.getByRole("button", { name: "Weiter" }).click();
 
-  // Step 3: price and location
+  // Step 3: timing, price and location
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await expect(page.getByText("Bitte wählen Sie, wann Sie verkaufen möchten.")).toBeVisible();
+  await choose(page, "In den nächsten 4 Wochen");
   await page.getByLabel("Ihre Preisvorstellung (€)").fill("9500");
   await page.getByLabel("PLZ", { exact: true }).fill("10115");
   await page.getByLabel("Ort", { exact: true }).fill("Berlin");
@@ -81,9 +85,9 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
         step: 3,
         values: {
           brand: "Audi", model: "A4", firstRegYear: "2015", firstRegMonth: "", mileageKm: "150000",
-          fuel: "DIESEL", gearbox: "MANUELL", power: "", powerUnit: "PS", bodyType: "",
+          fuel: "DIESEL", gearbox: "MANUELL", drivetrain: "FRONT", power: "", powerUnit: "PS", bodyType: "",
           condition: "GUT", accident: "NEIN", drivable: "JA", huDue: "", serviceBook: "JA",
-          previousOwners: "1", defects: "", desiredPrice: "", plz: "10115", city: "Berlin",
+          previousOwners: "1", defects: "", sellTiming: "SOFORT", desiredPrice: "", plz: "10115", city: "Berlin",
           name: "Bot", phone: "015112345678", email: "", contactMethod: "ANRUF", consent: true,
         },
       }),

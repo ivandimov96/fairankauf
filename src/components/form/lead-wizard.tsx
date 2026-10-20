@@ -5,14 +5,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, LoaderCircleIcon, LockIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CarFrontIcon,
+  CheckIcon,
+  LoaderCircleIcon,
+  LockIcon,
+  MapPinIcon,
+  UserRoundIcon,
+  WrenchIcon,
+  type LucideIcon,
+} from "lucide-react";
 
 import { BrandPicker } from "@/components/form/brand-picker";
 import { clearDraft, loadDraft, saveDraft } from "@/components/form/draft";
 import { ChoiceGroup } from "@/components/form/choice-group";
-import { Field, describedBy } from "@/components/form/field";
+import { Field, FieldErrors, describedBy } from "@/components/form/field";
+import { LicensePlate } from "@/components/site/license-plate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { TURNSTILE_SITE_KEY, Turnstile } from "@/components/form/turnstile";
@@ -21,10 +34,12 @@ import {
   BODY_TYPES,
   CONDITION,
   CONTACT_METHOD,
+  DRIVETRAIN,
   FUEL,
   GEARBOX,
   MONTHS,
   POWER_UNIT,
+  SELL_TIMING,
   SERVICE_BOOK,
   YES_NO,
 } from "@/lib/options";
@@ -40,11 +55,13 @@ import { cn } from "@/lib/utils";
 import { submitLead } from "@/server/actions/submit-lead";
 
 const STEPS = [
-  { key: "basics", title: "Ihr Auto", short: "Auto" },
-  { key: "condition", title: "Zustand", short: "Zustand" },
-  { key: "location", title: "Preis und Standort", short: "Preis & Ort" },
-  { key: "contact", title: "Ihre Kontaktdaten", short: "Kontakt" },
-] as const satisfies { key: keyof typeof STEP_FIELDS; title: string; short: string }[];
+  { key: "basics", title: "Ihr Auto", short: "Auto", hint: "Die Eckdaten", icon: CarFrontIcon },
+  { key: "condition", title: "Zustand", short: "Zustand", hint: "Wie ist es in Schuss?", icon: WrenchIcon },
+  { key: "location", title: "Preis und Standort", short: "Preis & Ort", hint: "Wann, wo, wie viel", icon: MapPinIcon },
+  { key: "contact", title: "Ihre Kontaktdaten", short: "Kontakt", hint: "Wie erreichen wir Sie?", icon: UserRoundIcon },
+] as const satisfies { key: keyof typeof STEP_FIELDS; title: string; short: string; hint: string; icon: LucideIcon }[];
+
+const TRUST = ["100 % kostenlos und unverbindlich", "Antwort in der Regel am selben Tag", "Abholung und Abmeldung inklusive"];
 
 const thisYear = new Date().getFullYear();
 const YEARS = Array.from({ length: thisYear - 1950 + 1 }, (_, i) => String(thisYear - i));
@@ -72,6 +89,18 @@ export function LeadWizard() {
     formState: { errors },
   } = form;
   const err = (name: FieldPath<LeadFormValues>) => errors[name]?.message as string | undefined;
+  /**
+   * register() plus: a field that already shows an error is re-checked on every
+   * change, so the message disappears as soon as the seller fixes it. Otherwise
+   * (mode "onTouched") it would only go away on blur, which moves the layout at
+   * the moment the seller taps "Weiter" and the tap misses the button.
+   */
+  const reg = (name: FieldPath<LeadFormValues>) =>
+    register(name, {
+      onChange: () => {
+        if (form.getFieldState(name).error) void form.trigger(name);
+      },
+    });
 
   // Restore a saved draft once, after hydration. localStorage only exists in the
   // browser, so reading it during render would make server and client HTML differ.
@@ -146,468 +175,609 @@ export function LeadWizard() {
   const contactMethod = useWatch({ control, name: "contactMethod" });
 
   return (
-    <form
-      noValidate
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (isLast) void form.handleSubmit(onValid, onInvalid)(e);
-        else void next();
-      }}
-      className="grid gap-6"
-    >
-      <div className="grid gap-4">
-        <ol aria-label={`Schritt ${step + 1} von ${STEPS.length}`} className="grid grid-cols-4 gap-1.5">
+    <div className="grid gap-4 lg:grid-cols-[17rem_1fr] lg:items-start lg:gap-6">
+      {/* Desktop: progress and trust points next to the form */}
+      <aside
+        aria-label="Fortschritt"
+        className="hidden rounded-2xl bg-ink p-6 text-ink-foreground lg:sticky lg:top-20 lg:grid lg:gap-7"
+      >
+        <div>
+          <LicensePlate className="h-10 rotate-[-3deg]" />
+          <h2 className="mt-5 text-xl font-bold">Ihr Angebot in 4 Schritten</h2>
+          <p className="mt-1 text-sm opacity-75">Dauert etwa 2 Minuten.</p>
+        </div>
+        <ol className="grid gap-1">
           {STEPS.map((s, i) => {
             const done = i < step;
-            const label = (
+            const active = i === step;
+            const inner = (
               <>
                 <span
                   className={cn(
-                    "h-1.5 rounded-full transition-colors",
-                    i <= step ? "bg-primary" : "bg-primary/15",
-                  )}
-                />
-                <span
-                  className={cn(
-                    "flex items-center gap-1 text-xs font-medium sm:text-sm",
-                    i === step ? "text-foreground" : "text-muted-foreground",
+                    "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                    done && "bg-signal text-signal-foreground",
+                    active && "bg-ink-foreground text-ink",
+                    !done && !active && "border border-ink-foreground/30 text-ink-foreground/70",
                   )}
                 >
-                  {done && <CheckIcon aria-hidden className="size-3.5 text-primary" strokeWidth={3} />}
-                  {s.short}
+                  {done ? <CheckIcon aria-hidden className="size-4" strokeWidth={3} /> : i + 1}
+                </span>
+                <span className="grid text-left">
+                  <span className={cn("font-semibold", !done && !active && "opacity-70")}>{s.title}</span>
+                  <span className="text-xs opacity-70">{s.hint}</span>
                 </span>
               </>
             );
             return (
-              <li key={s.key} aria-current={i === step ? "step" : undefined}>
+              <li key={s.key} aria-current={active ? "step" : undefined}>
                 {done ? (
-                  // Completed steps can be reopened.
                   <button
                     type="button"
                     onClick={() => goTo(i)}
                     disabled={pending}
-                    className="grid w-full gap-2 rounded-sm pb-1 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 outline-none hover:bg-ink-foreground/10 focus-visible:ring-[3px] focus-visible:ring-signal/60"
                   >
-                    {label}
+                    {inner}
                     <span className="sr-only">(bearbeiten)</span>
                   </button>
                 ) : (
-                  <div className="grid gap-2 pb-1">{label}</div>
+                  <div className={cn("flex items-center gap-3 rounded-lg px-2 py-2", active && "bg-ink-foreground/10")}>
+                    {inner}
+                  </div>
                 )}
               </li>
             );
           })}
         </ol>
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Schritt {step + 1} von {STEPS.length}
-          </p>
-          <h1 ref={headingRef} tabIndex={-1} className="mt-1 text-3xl font-bold tracking-tight outline-none">
-            {current.title}
-          </h1>
-        </div>
-      </div>
+        <ul className="grid gap-2.5 border-t border-ink-foreground/15 pt-5 text-sm">
+          {TRUST.map((t) => (
+            <li key={t} className="flex items-start gap-2">
+              <CheckIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-signal" strokeWidth={3} />
+              {t}
+            </li>
+          ))}
+        </ul>
+      </aside>
 
-      {current.key === "basics" && (
-        <div className="grid gap-5">
-          <Field id="brand" label="Marke" error={err("brand")}>
-            <Controller
-              control={control}
-              name="brand"
-              render={({ field }) => (
-                <BrandPicker
-                  id="brand"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  error={err("brand")}
-                  describedBy={describedBy("brand", err("brand"))}
-                />
-              )}
-            />
-          </Field>
-
-          <Field id="model" label="Modell" hint="z. B. Golf 1.4 TSI" error={err("model")}>
-            <Input
-              id="model"
-              autoComplete="off"
-              aria-invalid={!!err("model")}
-              aria-describedby={describedBy("model", err("model"), "hint")}
-              {...register("model")}
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field id="firstRegYear" label="Erstzulassung" error={err("firstRegYear")}>
-              <NativeSelect
-                id="firstRegYear"
-                aria-invalid={!!err("firstRegYear")}
-                aria-describedby={describedBy("firstRegYear", err("firstRegYear"))}
-                {...register("firstRegYear")}
-              >
-                <option value="">Jahr</option>
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field id="firstRegMonth" label="Monat" optional error={err("firstRegMonth")}>
-              <NativeSelect id="firstRegMonth" {...register("firstRegMonth")}>
-                <option value="">–</option>
-                {MONTHS.map((m, i) => (
-                  <option key={m} value={String(i + 1)}>
-                    {m}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-          </div>
-
-          <Field id="mileageKm" label="Kilometerstand (km)" error={err("mileageKm")}>
-            <Input
-              id="mileageKm"
-              inputMode="numeric"
-              placeholder="z. B. 120.000"
-              aria-invalid={!!err("mileageKm")}
-              aria-describedby={describedBy("mileageKm", err("mileageKm"))}
-              {...register("mileageKm")}
-            />
-          </Field>
-
-          <ChoiceGroup
-            name="fuel"
-            legend="Kraftstoff"
-            options={FUEL}
-            columns={3}
-            error={err("fuel")}
-            inputProps={register("fuel")}
-          />
-
-          <ChoiceGroup
-            name="gearbox"
-            legend="Getriebe"
-            options={GEARBOX}
-            error={err("gearbox")}
-            inputProps={register("gearbox")}
-          />
-
-          <Field id="power" label="Leistung" optional error={err("power")}>
-            <div className="grid grid-cols-[1fr_6rem] gap-2">
-              <Input
-                id="power"
-                inputMode="numeric"
-                aria-invalid={!!err("power")}
-                aria-describedby={describedBy("power", err("power"))}
-                {...register("power")}
-              />
-              <NativeSelect aria-label="Einheit der Leistung" {...register("powerUnit")}>
-                {Object.entries(POWER_UNIT).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-          </Field>
-
-          <Field id="bodyType" label="Karosserieform" optional>
-            <NativeSelect id="bodyType" {...register("bodyType")}>
-              <option value="">Bitte wählen</option>
-              {BODY_TYPES.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-        </div>
-      )}
-
-      {current.key === "condition" && (
-        <div className="grid gap-5">
-          <ChoiceGroup
-            name="condition"
-            legend="Allgemeiner Zustand"
-            options={CONDITION}
-            error={err("condition")}
-            inputProps={register("condition")}
-          />
-          <ChoiceGroup
-            name="accident"
-            legend="Unfallschaden"
-            options={ACCIDENT}
-            columns={3}
-            error={err("accident")}
-            inputProps={register("accident")}
-          />
-          <ChoiceGroup
-            name="drivable"
-            legend="Ist das Auto fahrbereit?"
-            options={YES_NO}
-            error={err("drivable")}
-            inputProps={register("drivable")}
-          />
-          <Controller
-            control={control}
-            name="huDue"
-            render={({ field }) => {
-              // Stored as "YYYY-MM"; shown as two German selects instead of the
-              // browser's month picker, which follows the phone's language.
-              const [year = "", month = ""] = field.value ? field.value.split("-") : [];
-              // A half-filled date ("2027-") fails validation ("Bitte wählen Sie Monat und Jahr.")
-              const set = (y: string, m: string) => field.onChange(y || m ? `${y}-${m}` : "");
+      <form
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (isLast) void form.handleSubmit(onValid, onInvalid)(e);
+          else void next();
+        }}
+        className="grid rounded-2xl border bg-card shadow-sm"
+      >
+        <div className="grid gap-5 px-5 pt-5 sm:px-8 sm:pt-7">
+          {/* Phone and tablet: compact progress bar */}
+          <ol aria-label={`Schritt ${step + 1} von ${STEPS.length}`} className="grid grid-cols-4 gap-1.5 lg:hidden">
+            {STEPS.map((s, i) => {
+              const done = i < step;
+              const label = (
+                <>
+                  <span
+                    className={cn("h-1.5 rounded-full transition-colors", i <= step ? "bg-primary" : "bg-primary/15")}
+                  />
+                  <span
+                    className={cn(
+                      "flex items-center gap-1 text-xs font-medium sm:text-sm",
+                      i === step ? "text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    {done && <CheckIcon aria-hidden className="size-3.5 text-primary" strokeWidth={3} />}
+                    {s.short}
+                  </span>
+                </>
+              );
               return (
-                <fieldset className="grid gap-2" aria-describedby={err("huDue") ? "huDue-error" : undefined}>
-                  <legend className="mb-2 flex gap-2 text-sm font-medium">
-                    Nächste HU/TÜV fällig
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </legend>
+                <li key={s.key} aria-current={i === step ? "step" : undefined}>
+                  {done ? (
+                    // Completed steps can be reopened.
+                    <button
+                      type="button"
+                      onClick={() => goTo(i)}
+                      disabled={pending}
+                      className="grid w-full gap-2 rounded-sm pb-1 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    >
+                      {label}
+                      <span className="sr-only">(bearbeiten)</span>
+                    </button>
+                  ) : (
+                    <div className="grid gap-2 pb-1">{label}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="flex items-start gap-4">
+            <span className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary sm:flex">
+              <current.icon aria-hidden className="size-6" />
+            </span>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Schritt {step + 1} von {STEPS.length}
+              </p>
+              <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">
+                {current.title}
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-5 px-5 py-6 sm:px-8">
+          {current.key === "basics" && (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="brand" label="Marke" error={err("brand")}>
+                  <Controller
+                    control={control}
+                    name="brand"
+                    render={({ field }) => (
+                      <BrandPicker
+                        id="brand"
+                        value={field.value}
+                        onChange={(v) => {
+                          field.onChange(v);
+                          if (err("brand")) void form.trigger("brand");
+                        }}
+                        onBlur={field.onBlur}
+                        error={err("brand")}
+                        describedBy={describedBy("brand", err("brand"))}
+                      />
+                    )}
+                  />
+                </Field>
+                <Field id="model" label="Modell" hint="z. B. Golf 1.4 TSI" error={err("model")}>
+                  <Input
+                    id="model"
+                    autoComplete="off"
+                    aria-invalid={!!err("model")}
+                    aria-describedby={describedBy("model", err("model"), "hint")}
+                    {...reg("model")}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid content-start gap-2">
                   <div className="grid grid-cols-2 gap-3">
-                    <NativeSelect
-                      id="huDue"
-                      aria-label="HU-Monat"
-                      aria-invalid={!!err("huDue")}
-                      value={month}
-                      onChange={(e) => set(year, e.target.value)}
-                      onBlur={field.onBlur}
-                    >
-                      <option value="">Monat</option>
-                      {MONTHS.map((m, i) => (
-                        <option key={m} value={String(i + 1).padStart(2, "0")}>
-                          {m}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                    <NativeSelect
-                      aria-label="HU-Jahr"
-                      aria-invalid={!!err("huDue")}
-                      value={year}
-                      onChange={(e) => set(e.target.value, month)}
-                      onBlur={field.onBlur}
-                    >
-                      <option value="">Jahr</option>
-                      {HU_YEARS.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
+                    <Field id="firstRegYear" label="Erstzulassung">
+                      <NativeSelect
+                        id="firstRegYear"
+                        aria-invalid={!!err("firstRegYear")}
+                        aria-describedby={describedBy("firstRegYear", err("firstRegYear"))}
+                        {...reg("firstRegYear")}
+                      >
+                        <option value="">Jahr</option>
+                        {YEARS.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                    <Field id="firstRegMonth" label="Monat" optional>
+                      <NativeSelect
+                        id="firstRegMonth"
+                        aria-invalid={!!err("firstRegMonth")}
+                        aria-describedby={describedBy("firstRegMonth", err("firstRegMonth"))}
+                        {...reg("firstRegMonth")}
+                      >
+                        <option value="">–</option>
+                        {MONTHS.map((m, i) => (
+                          <option key={m} value={String(i + 1)}>
+                            {m}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                  </div>
+                  <FieldErrors
+                    errors={[
+                      ["firstRegYear", err("firstRegYear")],
+                      ["firstRegMonth", err("firstRegMonth")],
+                    ]}
+                  />
+                </div>
+                <Field id="mileageKm" label="Kilometerstand (km)" error={err("mileageKm")}>
+                  <Input
+                    id="mileageKm"
+                    inputMode="numeric"
+                    placeholder="z. B. 120.000"
+                    aria-invalid={!!err("mileageKm")}
+                    aria-describedby={describedBy("mileageKm", err("mileageKm"))}
+                    {...reg("mileageKm")}
+                  />
+                </Field>
+              </div>
+
+              <ChoiceGroup
+                name="fuel"
+                legend="Kraftstoff"
+                options={FUEL}
+                columns="grid-cols-3 sm:grid-cols-6"
+                error={err("fuel")}
+                inputProps={reg("fuel")}
+              />
+
+              <div className="grid gap-5 sm:grid-cols-[2fr_3fr]">
+                <ChoiceGroup
+                  name="gearbox"
+                  legend="Getriebe"
+                  options={GEARBOX}
+                  error={err("gearbox")}
+                  inputProps={reg("gearbox")}
+                />
+                <ChoiceGroup
+                  name="drivetrain"
+                  legend="Antrieb"
+                  options={DRIVETRAIN}
+                  columns="grid-cols-3"
+                  error={err("drivetrain")}
+                  inputProps={reg("drivetrain")}
+                />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="power" label="Leistung" optional error={err("power")}>
+                  <div className="grid grid-cols-[1fr_6rem] gap-2">
+                    <Input
+                      id="power"
+                      inputMode="numeric"
+                      placeholder="z. B. 150"
+                      aria-invalid={!!err("power")}
+                      aria-describedby={describedBy("power", err("power"))}
+                      {...reg("power")}
+                    />
+                    <NativeSelect aria-label="Einheit der Leistung" {...reg("powerUnit")}>
+                      {Object.entries(POWER_UNIT).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
                         </option>
                       ))}
                     </NativeSelect>
                   </div>
-                  {err("huDue") && (
-                    <p id="huDue-error" role="alert" className="text-sm text-destructive">
-                      {err("huDue")}
-                    </p>
-                  )}
-                </fieldset>
-              );
-            }}
-          />
-          <ChoiceGroup
-            name="serviceBook"
-            legend="Scheckheftgepflegt?"
-            options={SERVICE_BOOK}
-            columns={3}
-            error={err("serviceBook")}
-            inputProps={register("serviceBook")}
-          />
-          <Field id="previousOwners" label="Anzahl Vorbesitzer" error={err("previousOwners")}>
-            <Input
-              id="previousOwners"
-              inputMode="numeric"
-              placeholder="z. B. 1"
-              aria-invalid={!!err("previousOwners")}
-              aria-describedby={describedBy("previousOwners", err("previousOwners"))}
-              {...register("previousOwners")}
-            />
-          </Field>
-          <Field
-            id="defects"
-            label="Bekannte Mängel"
-            optional
-            hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
-            error={err("defects")}
-          >
-            <Textarea
-              id="defects"
-              aria-invalid={!!err("defects")}
-              aria-describedby={describedBy("defects", err("defects"), "hint")}
-              {...register("defects")}
-            />
-          </Field>
-        </div>
-      )}
-
-      {current.key === "location" && (
-        <div className="grid gap-5">
-          <Field
-            id="desiredPrice"
-            label="Ihre Preisvorstellung (€)"
-            optional
-            hint="Wenn Sie keine Vorstellung haben, lassen Sie das Feld leer."
-            error={err("desiredPrice")}
-          >
-            <Input
-              id="desiredPrice"
-              inputMode="numeric"
-              placeholder="z. B. 8.500"
-              aria-invalid={!!err("desiredPrice")}
-              aria-describedby={describedBy("desiredPrice", err("desiredPrice"), "hint")}
-              {...register("desiredPrice")}
-            />
-          </Field>
-          <div className="grid grid-cols-[7rem_1fr] gap-3">
-            <Field id="plz" label="PLZ" error={err("plz")}>
-              <Input
-                id="plz"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                maxLength={5}
-                aria-invalid={!!err("plz")}
-                aria-describedby={describedBy("plz", err("plz"))}
-                {...register("plz")}
-              />
-            </Field>
-            <Field id="city" label="Ort" error={err("city")}>
-              <Input
-                id="city"
-                autoComplete="address-level2"
-                aria-invalid={!!err("city")}
-                aria-describedby={describedBy("city", err("city"))}
-                {...register("city")}
-              />
-            </Field>
-          </div>
-        </div>
-      )}
-
-      {current.key === "contact" && (
-        <div className="grid gap-5">
-          <CarSummary values={form.getValues()} />
-          <Field id="name" label="Name" error={err("name")}>
-            <Input
-              id="name"
-              autoComplete="name"
-              aria-invalid={!!err("name")}
-              aria-describedby={describedBy("name", err("name"))}
-              {...register("name")}
-            />
-          </Field>
-          <Field id="phone" label="Telefonnummer" hint="z. B. 0151 23456789" error={err("phone")}>
-            <Input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              aria-invalid={!!err("phone")}
-              aria-describedby={describedBy("phone", err("phone"), "hint")}
-              {...register("phone")}
-            />
-          </Field>
-          <Field id="email" label="E-Mail" optional={contactMethod !== "EMAIL"} error={err("email")}>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              aria-invalid={!!err("email")}
-              aria-describedby={describedBy("email", err("email"))}
-              {...register("email")}
-            />
-          </Field>
-          <ChoiceGroup
-            name="contactMethod"
-            legend="Wie sollen wir Sie kontaktieren?"
-            options={CONTACT_METHOD}
-            columns={3}
-            error={err("contactMethod")}
-            inputProps={register("contactMethod")}
-          />
-          <div className="grid gap-2">
-            <label className="flex items-start gap-3 text-sm leading-relaxed">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-5 shrink-0 accent-primary"
-                aria-invalid={!!err("consent")}
-                aria-describedby={err("consent") ? "consent-error" : undefined}
-                {...register("consent")}
-              />
-              <span>
-                Ich bin einverstanden, dass FairAnkauf meine Angaben verarbeitet, um mich wegen meines
-                Autos zu kontaktieren. Details in der{" "}
-                <Link href="/datenschutz" target="_blank" className="text-primary underline underline-offset-4">
-                  Datenschutzerklärung
-                </Link>
-                .
-              </span>
-            </label>
-            {err("consent") && (
-              <p id="consent-error" role="alert" className="text-sm text-destructive">
-                {err("consent")}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Honeypot: invisible to people, bots fill it in. */}
-      <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
-        {/* Deliberately meaningless name and label: browsers and password managers
-            autofill fields called "website" or "email", which made real sellers look like bots. */}
-        <label htmlFor="fa-hp">Dieses Feld bitte leer lassen</label>
-        <input
-          ref={honeypotRef}
-          id="fa-hp"
-          name="fa-hp"
-          type="text"
-          tabIndex={-1}
-          autoComplete="off"
-          data-1p-ignore
-          data-lpignore="true"
-          data-form-type="other"
-        />
-      </div>
-
-      {isLast && <Turnstile onToken={setTurnstileToken} />}
-
-      {submitError && (
-        <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {submitError}
-        </p>
-      )}
-
-      {isLast && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <LockIcon aria-hidden className="size-4 shrink-0" />
-          Kostenlos und unverbindlich. Ihre Angaben gehen nur an uns.
-        </p>
-      )}
-
-      <div className="sticky bottom-0 -mx-5 grid grid-cols-[auto_1fr] gap-3 border-t bg-card/95 px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-        {step > 0 ? (
-          <Button type="button" variant="outline" size="lg" onClick={() => goTo(step - 1)} disabled={pending}>
-            <ArrowLeftIcon aria-hidden />
-            Zurück
-          </Button>
-        ) : (
-          <span />
-        )}
-        <Button type="submit" size="lg" disabled={pending || (isLast && !!TURNSTILE_SITE_KEY && !turnstileToken)}>
-          {pending ? (
-            <>
-              <LoaderCircleIcon aria-hidden className="animate-spin" />
-              Wird gesendet…
-            </>
-          ) : isLast ? (
-            "Angebot anfordern"
-          ) : (
-            <>
-              Weiter
-              <ArrowRightIcon aria-hidden />
+                </Field>
+                <Field id="bodyType" label="Karosserieform" optional>
+                  <NativeSelect id="bodyType" {...reg("bodyType")}>
+                    <option value="">Bitte wählen</option>
+                    {BODY_TYPES.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              </div>
             </>
           )}
-        </Button>
-      </div>
-    </form>
+
+          {current.key === "condition" && (
+            <>
+              <ChoiceGroup
+                name="condition"
+                legend="Allgemeiner Zustand"
+                options={CONDITION}
+                columns="grid-cols-2 sm:grid-cols-4"
+                error={err("condition")}
+                inputProps={reg("condition")}
+              />
+              <div className="grid gap-5 sm:grid-cols-[3fr_2fr]">
+                <ChoiceGroup
+                  name="accident"
+                  legend="Unfallschaden"
+                  options={ACCIDENT}
+                  columns="grid-cols-3"
+                  error={err("accident")}
+                  inputProps={reg("accident")}
+                />
+                <ChoiceGroup
+                  name="drivable"
+                  legend="Ist das Auto fahrbereit?"
+                  options={YES_NO}
+                  error={err("drivable")}
+                  inputProps={reg("drivable")}
+                />
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Controller
+                  control={control}
+                  name="huDue"
+                  render={({ field }) => {
+                    // Stored as "YYYY-MM"; shown as two German selects instead of the
+                    // browser's month picker, which follows the phone's language.
+                    const [year = "", month = ""] = field.value ? field.value.split("-") : [];
+                    // A half-filled date ("2027-") fails validation ("Bitte wählen Sie Monat und Jahr.")
+                    const set = (y: string, m: string) => {
+                      field.onChange(y || m ? `${y}-${m}` : "");
+                      if (err("huDue")) void form.trigger("huDue");
+                    };
+                    return (
+                      <fieldset
+                        className="grid content-start gap-2"
+                        aria-describedby={err("huDue") ? "huDue-error" : undefined}
+                      >
+                        <legend className="mb-2 flex gap-2 text-sm leading-none font-medium">
+                          Nächste HU/TÜV fällig
+                          <span className="font-normal text-muted-foreground">(optional)</span>
+                        </legend>
+                        <div className="grid grid-cols-2 gap-3">
+                          <NativeSelect
+                            id="huDue"
+                            aria-label="HU-Monat"
+                            aria-invalid={!!err("huDue")}
+                            value={month}
+                            onChange={(e) => set(year, e.target.value)}
+                            onBlur={field.onBlur}
+                          >
+                            <option value="">Monat</option>
+                            {MONTHS.map((m, i) => (
+                              <option key={m} value={String(i + 1).padStart(2, "0")}>
+                                {m}
+                              </option>
+                            ))}
+                          </NativeSelect>
+                          <NativeSelect
+                            aria-label="HU-Jahr"
+                            aria-invalid={!!err("huDue")}
+                            value={year}
+                            onChange={(e) => set(e.target.value, month)}
+                            onBlur={field.onBlur}
+                          >
+                            <option value="">Jahr</option>
+                            {HU_YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))}
+                          </NativeSelect>
+                        </div>
+                        {err("huDue") && (
+                          <p id="huDue-error" role="alert" className="text-sm text-destructive">
+                            {err("huDue")}
+                          </p>
+                        )}
+                      </fieldset>
+                    );
+                  }}
+                />
+                <ChoiceGroup
+                  name="serviceBook"
+                  legend="Scheckheftgepflegt?"
+                  options={SERVICE_BOOK}
+                  columns="grid-cols-3"
+                  error={err("serviceBook")}
+                  inputProps={reg("serviceBook")}
+                />
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="previousOwners" label="Anzahl Vorbesitzer" error={err("previousOwners")}>
+                  <Input
+                    id="previousOwners"
+                    inputMode="numeric"
+                    placeholder="z. B. 1"
+                    aria-invalid={!!err("previousOwners")}
+                    aria-describedby={describedBy("previousOwners", err("previousOwners"))}
+                    {...reg("previousOwners")}
+                  />
+                </Field>
+                <Field
+                  id="defects"
+                  label="Bekannte Mängel"
+                  optional
+                  hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
+                  error={err("defects")}
+                >
+                  <Textarea
+                    id="defects"
+                    rows={2}
+                    className="min-h-11"
+                    aria-invalid={!!err("defects")}
+                    aria-describedby={describedBy("defects", err("defects"), "hint")}
+                    {...reg("defects")}
+                  />
+                </Field>
+              </div>
+            </>
+          )}
+
+          {current.key === "location" && (
+            <>
+              <ChoiceGroup
+                name="sellTiming"
+                legend="Wann möchten Sie Ihr Auto verkaufen?"
+                options={SELL_TIMING}
+                columns="grid-cols-2 sm:grid-cols-4"
+                error={err("sellTiming")}
+                inputProps={reg("sellTiming")}
+              />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field
+                  id="desiredPrice"
+                  label="Ihre Preisvorstellung (€)"
+                  optional
+                  hint="Ohne Vorstellung? Einfach leer lassen."
+                  error={err("desiredPrice")}
+                >
+                  <Input
+                    id="desiredPrice"
+                    inputMode="numeric"
+                    placeholder="z. B. 8.500"
+                    aria-invalid={!!err("desiredPrice")}
+                    aria-describedby={describedBy("desiredPrice", err("desiredPrice"), "hint")}
+                    {...reg("desiredPrice")}
+                  />
+                </Field>
+                {/* PLZ and Ort share one row; their errors go below it so the inputs stay aligned. */}
+                <div className="grid content-start gap-2">
+                  <div className="grid grid-cols-[6.5rem_1fr] gap-3">
+                    <Field id="plz" label="PLZ">
+                      <Input
+                        id="plz"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={5}
+                        placeholder="12345"
+                        aria-invalid={!!err("plz")}
+                        aria-describedby={describedBy("plz", err("plz"))}
+                        {...reg("plz")}
+                      />
+                    </Field>
+                    <Field id="city" label="Ort">
+                      <Input
+                        id="city"
+                        autoComplete="address-level2"
+                        aria-invalid={!!err("city")}
+                        aria-describedby={describedBy("city", err("city"))}
+                        {...reg("city")}
+                      />
+                    </Field>
+                  </div>
+                  <FieldErrors
+                    errors={[
+                      ["plz", err("plz")],
+                      ["city", err("city")],
+                    ]}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {current.key === "contact" && (
+            <>
+              <CarSummary values={form.getValues()} />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="name" label="Name" error={err("name")}>
+                  <Input
+                    id="name"
+                    autoComplete="name"
+                    aria-invalid={!!err("name")}
+                    aria-describedby={describedBy("name", err("name"))}
+                    {...reg("name")}
+                  />
+                </Field>
+                <Field id="phone" label="Telefonnummer" hint="z. B. 0151 23456789" error={err("phone")}>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    aria-invalid={!!err("phone")}
+                    aria-describedby={describedBy("phone", err("phone"), "hint")}
+                    {...reg("phone")}
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="email" label="E-Mail" optional={contactMethod !== "EMAIL"} error={err("email")}>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    aria-invalid={!!err("email")}
+                    aria-describedby={describedBy("email", err("email"))}
+                    {...reg("email")}
+                  />
+                </Field>
+                <ChoiceGroup
+                  name="contactMethod"
+                  legend="Wie sollen wir Sie kontaktieren?"
+                  options={CONTACT_METHOD}
+                  columns="grid-cols-3"
+                  error={err("contactMethod")}
+                  inputProps={reg("contactMethod")}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className="flex items-start gap-3 text-sm leading-relaxed font-normal">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-5 shrink-0 accent-primary"
+                    aria-invalid={!!err("consent")}
+                    aria-describedby={err("consent") ? "consent-error" : undefined}
+                    {...reg("consent")}
+                  />
+                  <span>
+                    Ich bin einverstanden, dass FairAnkauf meine Angaben verarbeitet, um mich wegen meines Autos zu
+                    kontaktieren. Details in der{" "}
+                    <Link href="/datenschutz" target="_blank" className="text-primary underline underline-offset-4">
+                      Datenschutzerklärung
+                    </Link>
+                    .
+                  </span>
+                </Label>
+                {err("consent") && (
+                  <p id="consent-error" role="alert" className="text-sm text-destructive">
+                    {err("consent")}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Honeypot: invisible to people, bots fill it in. */}
+          <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+            {/* Deliberately meaningless name and label: browsers and password managers
+                autofill fields called "website" or "email", which made real sellers look like bots. */}
+            <label htmlFor="fa-hp">Dieses Feld bitte leer lassen</label>
+            <input
+              ref={honeypotRef}
+              id="fa-hp"
+              name="fa-hp"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
+            />
+          </div>
+
+          {isLast && <Turnstile onToken={setTurnstileToken} />}
+
+          {submitError && (
+            <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {submitError}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-b-2xl border-t bg-muted/40 px-5 py-4 max-sm:sticky max-sm:bottom-0 max-sm:bg-card/95 max-sm:backdrop-blur sm:px-8">
+          {step > 0 ? (
+            <Button type="button" variant="outline" size="lg" onClick={() => goTo(step - 1)} disabled={pending}>
+              <ArrowLeftIcon aria-hidden />
+              Zurück
+            </Button>
+          ) : (
+            <p className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <LockIcon aria-hidden className="size-4 shrink-0" />
+              Kostenlos und unverbindlich
+            </p>
+          )}
+          <Button
+            type="submit"
+            size="lg"
+            className="max-sm:flex-1"
+            disabled={pending || (isLast && !!TURNSTILE_SITE_KEY && !turnstileToken)}
+          >
+            {pending ? (
+              <>
+                <LoaderCircleIcon aria-hidden className="animate-spin" />
+                Wird gesendet…
+              </>
+            ) : isLast ? (
+              "Angebot anfordern"
+            ) : (
+              <>
+                Weiter
+                <ArrowRightIcon aria-hidden />
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -616,14 +786,18 @@ function CarSummary({ values }: { values: LeadFormValues }) {
   const km = Number(String(values.mileageKm ?? "").replace(/[\s.]/g, ""));
   const parts = [
     [values.brand, values.model].filter(Boolean).join(" "),
-    values.firstRegYear,
+    values.firstRegYear ? `EZ ${values.firstRegYear}` : "",
     Number.isFinite(km) && km > 0 ? `${formatNumber(km)} km` : "",
+    values.fuel ? FUEL[values.fuel] : "",
   ].filter(Boolean);
   if (parts.length === 0) return null;
   return (
-    <div className="rounded-xl bg-accent px-4 py-3">
-      <p className="text-xs font-medium text-muted-foreground">Ihr Auto</p>
-      <p className="font-semibold">{parts.join(" · ")}</p>
+    <div className="flex items-center gap-3 rounded-xl bg-accent px-4 py-3">
+      <CarFrontIcon aria-hidden className="size-5 shrink-0 text-primary" />
+      <div>
+        <p className="text-xs font-medium text-muted-foreground">Ihr Auto</p>
+        <p className="font-semibold">{parts.join(" · ")}</p>
+      </div>
     </div>
   );
 }
