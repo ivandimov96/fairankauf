@@ -65,6 +65,46 @@ function price(lead: LeadSummary) {
   return lead.desiredPriceCents === null ? "keine Angabe" : formatEuro(lead.desiredPriceCents);
 }
 
+/** Email subject: "Neue Anfrage: Volkswagen Golf 1.4 TSI, EZ 2016, 123.000 km". */
+export function leadSubject(lead: LeadSummary): string {
+  return `Neue Anfrage: ${lead.brand} ${lead.model}, EZ ${lead.firstRegYear}, ${formatNumber(lead.mileageKm)} km`;
+}
+
+/**
+ * The lead as WhatsApp template parameters, one per line of the template body
+ * (docs/DEPLOY.md has the body). Meta rejects parameters with line breaks, tabs,
+ * four or more spaces in a row, or no text at all, so each one is a single
+ * trimmed line and "–" when there is nothing to say.
+ */
+export function formatTemplateParams(lead: LeadSummary): string[] {
+  const power = lead.powerKw ? ` · ${lead.powerKw} kW` : "";
+  const extras = [details(lead), lead.defects ? `Mängel: ${lead.defects}` : ""].filter(Boolean).join(" · ");
+  const contact = [
+    lead.name,
+    `${formatPhone(lead.phone)} (${CONTACT_METHOD[lead.contactMethod]})`,
+    lead.email ?? "",
+  ].filter(Boolean);
+  return [
+    `${lead.brand} ${lead.model}`,
+    `EZ ${firstReg(lead)} · ${formatNumber(lead.mileageKm)} km`,
+    `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]} · ${DRIVETRAIN[lead.drivetrain]}${power}`,
+    `${CONDITION[lead.condition]} · Unfall: ${ACCIDENT[lead.accident]} · Fahrbereit: ${lead.drivable ? YES_NO.JA : YES_NO.NEIN}`,
+    extras,
+    price(lead),
+    SELL_TIMING[lead.sellTiming],
+    `${lead.plz} ${lead.city}`,
+    contact.join(" · "),
+  ].map(templateParam);
+}
+
+const PARAM_MAX = 300;
+
+function templateParam(value: string): string {
+  const oneLine = value.replace(/\s+/g, " ").trim();
+  if (!oneLine) return "–";
+  return oneLine.length > PARAM_MAX ? `${oneLine.slice(0, PARAM_MAX - 1)}…` : oneLine;
+}
+
 /** The full lead as plain text, one field per line. */
 export function formatLeadMessage(lead: LeadSummary): string {
   const power = lead.powerKw ? ` · ${lead.powerKw} kW` : "";

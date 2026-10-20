@@ -5,8 +5,9 @@ Updated 2026-10-13 after Ivan's scope decisions:
 - **No photos.** Sellers don't upload photos, so there is no file storage.
 - **No admin website.** That drops the admin login, lead inbox, status pipeline, notes,
   deal calculator, profit tracking, dashboard and CSV export from the original spec.
-- **No database.** How leads reach Ivan is being rebuilt from scratch (2026-10-14: CallMeBot,
-  Resend, Gmail SMTP, WhatsApp Cloud API and Telegram were all removed). Until then leads
+- **No database.** Leads reach Ivan by email (SMTP through his own mailbox) and WhatsApp
+  (Meta Cloud API template) since 2026-10-20; before that every channel had been removed
+  on 2026-10-14 to start over. Without configuration, leads
   are only logged.
 
 ## 1. Architecture
@@ -20,7 +21,7 @@ Seller's phone
 Server Action submitLead
    1. spam checks (honeypot, optional Turnstile, 5 leads/hour per IP in memory)
    2. Zod parse (same schema as the client)
-   3. sendLeadNotification(lead): channel to be decided; currently logs only
+   3. sendLeadNotification(lead): email + WhatsApp to every configured channel; logs only when none is configured
       → ok: thank-you page · throws: "please try again", entries kept
 ```
 
@@ -59,9 +60,9 @@ browser as a draft until it is sent). Money is integer cents internally.
 ## 5. Risks
 
 1. **The notification is the only record.** No database means no backup; a seller who gets
-   "try again" and gives up is gone. **Right now there is no channel at all**, so the live site
-   must not be advertised before one exists.
-2. **Channel choice is open.** Tried and dropped: CallMeBot (unofficial), Resend and Gmail SMTP (Ivan wants no third-party mail service / extra setup).
+   "try again" and gives up is gone. A lead counts as delivered when at least one channel got
+   it; when none did, the lead is logged in full and the seller is asked to retry.
+2. **Channels (decided 2026-10-20):** email to ivandimov@yahoo.com via SMTP app password, WhatsApp to two numbers via the Meta Cloud API. Dropped earlier: CallMeBot (unofficial), Resend (third-party mail service).
 3. **WhatsApp Cloud API needs its own sender number** (not your personal WhatsApp number) and an
    approved template; each message has a small Meta fee.
 4. **GDPR:** the site stores no lead data; deletion requests are handled by deleting the
@@ -82,5 +83,5 @@ browser as a draft until it is sent). Money is integer cents internally.
 | 6 Deals, profit, dashboard, CSV | dropped |
 | 7 Hardening: Turnstile (optional), rate limiting, honeypot, SEO, error pages, mobile review | done (Lighthouse mobile: 96–98 performance, 100 a11y/SEO/best practices) |
 | 8 Deployment guide (Vercel) | done: docs/DEPLOY.md |
-| Notification channel v2 | open: all channels removed 2026-10-14 at Ivan's request, to start over |
+| Notification channel v2 | done 2026-10-20: email (SMTP) + WhatsApp (Meta Cloud API template); Ivan sets the Vercel variables per docs/DEPLOY.md |
 | Database | removed 2026-10-13 (Ivan: WhatsApp only) |

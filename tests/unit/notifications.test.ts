@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLeadMessage, type LeadSummary } from "@/lib/notifications/format";
+import { formatLeadMessage, formatTemplateParams, leadSubject, type LeadSummary } from "@/lib/notifications/format";
 
 const lead: LeadSummary = {
   brand: "Volkswagen",
@@ -67,5 +67,42 @@ describe("formatLeadMessage", () => {
     expect(msg).toContain("Benzin · Manuell · Frontantrieb\n");
     expect(msg).toContain("Preisvorstellung: keine Angabe");
     expect(msg).toContain("Fahrbereit: Nein");
+  });
+});
+
+describe("leadSubject", () => {
+  it("names car, year and mileage", () => {
+    expect(leadSubject(lead)).toBe("Neue Anfrage: Volkswagen Golf 1.4 TSI, EZ 2016, 123.000 km");
+  });
+});
+
+describe("formatTemplateParams", () => {
+  it("gives one single-line parameter per template line, none empty", () => {
+    expect(formatTemplateParams(lead)).toEqual([
+      "Volkswagen Golf 1.4 TSI",
+      "EZ 05/2016 · 123.000 km",
+      "Benzin · Manuell · Frontantrieb · 92 kW",
+      "Gut · Unfall: Ja, repariert · Fahrbereit: Ja",
+      "–",
+      "9.500 €",
+      "So schnell wie möglich",
+      "10115 Berlin",
+      "Erika Musterfrau · +49 1511 2345678 (WhatsApp)",
+    ]);
+  });
+
+  it("flattens line breaks and long defects, and adds details and email", () => {
+    const params = formatTemplateParams({
+      ...lead,
+      bodyType: "Kombi",
+      previousOwners: 2,
+      defects: "Kratzer\nhinten    links\t" + "x".repeat(400),
+      email: "erika@example.de",
+    });
+    expect(params[4]!.startsWith("Karosserie: Kombi · Vorbesitzer: 2 · Mängel: Kratzer hinten links xxx")).toBe(true);
+    expect(params[4]!.length).toBe(300);
+    expect(params[4]!.endsWith("…")).toBe(true);
+    expect(params.some((p) => /[\n\t]| {4}/.test(p))).toBe(false);
+    expect(params[8]).toBe("Erika Musterfrau · +49 1511 2345678 (WhatsApp) · erika@example.de");
   });
 });
