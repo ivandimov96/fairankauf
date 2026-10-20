@@ -56,20 +56,26 @@ WhatsApp messages come from Meta's **WhatsApp Business Platform**. Two things to
    permissions `whatsapp_business_messaging` and `whatsapp_business_management`. Copy the token.
 5. **Template**: in the app go to **WhatsApp → Message templates → Create template**
    (also reachable at <https://business.facebook.com/wa/manage/message-templates>).
-   Category **Utility**, name `neue_anfrage`, language **German**. Paste this as the body:
+   Category **Utility**, name `neue_anfrage`, language **German**. Paste this as the body
+   (Meta rejects a template with "too many variables for its length", so the fixed text
+   around the nine variables is deliberately this long):
 
    ```
-   🚗 Neue Anfrage: {{1}}
-   {{2}}
-   {{3}}
+   🚗 Neue Anfrage über das Formular auf der FairAnkauf Website.
+   Fahrzeug: {{1}}
+   Zulassung und Laufleistung: {{2}}
+   Motor und Antrieb: {{3}}
    Zustand: {{4}}
-   Details: {{5}}
-   Preisvorstellung: {{6}}
-   Verkauf: {{7}}
-   Ort: {{8}}
-   Kontakt: {{9}}
-   Diese Nachricht kommt von fairankauf.vercel.app.
+   Weitere Details: {{5}}
+   Preisvorstellung des Verkäufers: {{6}}
+   Gewünschter Verkaufszeitpunkt: {{7}}
+   Standort des Fahrzeugs: {{8}}
+   Kontakt des Verkäufers: {{9}}
+   Bitte melden Sie sich zeitnah beim Verkäufer. Diese Nachricht wurde automatisch von FairAnkauf gesendet.
    ```
+
+   The template for Ivan's account was created this way on 2026-10-20 (template id
+   2073162733332826); these steps are for recreating it in another account.
 
    Meta asks for a sample for each variable; use these:
    1 `Volkswagen Golf 1.4 TSI` · 2 `EZ 05/2016 · 123.000 km` · 3 `Benzin · Manuell · Frontantrieb · 92 kW` ·
