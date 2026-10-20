@@ -7,9 +7,11 @@ import {
   BODY_TYPES,
   CONDITION,
   CONTACT_METHOD,
+  DRIVETRAIN,
   FUEL,
   GEARBOX,
   POWER_UNIT,
+  SELL_TIMING,
   SERVICE_BOOK,
   YES_NO,
   keysOf,
@@ -69,6 +71,7 @@ export const leadStep1 = z.object({
   mileageKm: requiredInt(0, () => 2_000_000, "Bitte geben Sie den Kilometerstand ein."),
   fuel: choice(FUEL, "Bitte wählen Sie die Kraftstoffart."),
   gearbox: choice(GEARBOX, "Bitte wählen Sie das Getriebe."),
+  drivetrain: choice(DRIVETRAIN, "Bitte wählen Sie den Antrieb."),
   power: optionalInt(1, 2000, "Bitte geben Sie eine gültige Leistung ein."),
   powerUnit: choice(POWER_UNIT, "Bitte wählen Sie kW oder PS."),
   bodyType: z.union([z.enum(BODY_TYPES), z.literal("")]).transform((v) => v || null),
@@ -90,6 +93,7 @@ export const leadStep2 = z.object({
 });
 
 export const leadStep4 = z.object({
+  sellTiming: choice(SELL_TIMING, "Bitte wählen Sie, wann Sie verkaufen möchten."),
   desiredPrice: optionalInt(1, 1_000_000, "Bitte geben Sie einen Betrag in Euro ein."),
   plz: z
     .string()
@@ -184,6 +188,7 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     mileageKm: input.mileageKm,
     fuel: input.fuel,
     gearbox: input.gearbox,
+    drivetrain: input.drivetrain,
     powerKw,
     bodyType: input.bodyType,
     condition: input.condition,
@@ -194,6 +199,7 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     serviceBook: input.serviceBook,
     previousOwners: input.previousOwners,
     defects: input.defects,
+    sellTiming: input.sellTiming,
     desiredPriceCents: input.desiredPrice === null ? null : input.desiredPrice * 100,
     plz: input.plz,
     city: input.city,

@@ -1,5 +1,15 @@
 import { formatEuro, formatNumber } from "@/lib/money";
-import { ACCIDENT, CONDITION, CONTACT_METHOD, FUEL, GEARBOX, SERVICE_BOOK, YES_NO } from "@/lib/options";
+import {
+  ACCIDENT,
+  CONDITION,
+  CONTACT_METHOD,
+  DRIVETRAIN,
+  FUEL,
+  GEARBOX,
+  SELL_TIMING,
+  SERVICE_BOOK,
+  YES_NO,
+} from "@/lib/options";
 import { formatPhone, waMeLink } from "@/lib/phone";
 
 /**
@@ -14,6 +24,7 @@ export type LeadSummary = {
   mileageKm: number;
   fuel: keyof typeof FUEL;
   gearbox: keyof typeof GEARBOX;
+  drivetrain: keyof typeof DRIVETRAIN;
   powerKw: number | null;
   bodyType?: string | null;
   condition: keyof typeof CONDITION;
@@ -24,6 +35,7 @@ export type LeadSummary = {
   serviceBook?: keyof typeof SERVICE_BOOK;
   previousOwners?: number;
   defects?: string | null;
+  sellTiming: keyof typeof SELL_TIMING;
   desiredPriceCents: number | null;
   plz: string;
   city: string;
@@ -59,11 +71,12 @@ export function formatLeadMessage(lead: LeadSummary): string {
   const car = [
     `🚗 Neue Anfrage: ${lead.brand} ${lead.model}`,
     `EZ ${firstReg(lead)} · ${formatNumber(lead.mileageKm)} km`,
-    `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]}${power}`,
+    `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]} · ${DRIVETRAIN[lead.drivetrain]}${power}`,
     `Zustand: ${CONDITION[lead.condition]} · Unfall: ${ACCIDENT[lead.accident]} · Fahrbereit: ${lead.drivable ? YES_NO.JA : YES_NO.NEIN}`,
     details(lead),
     lead.defects ? `Mängel: ${lead.defects}` : "",
     `Preisvorstellung: ${price(lead)}`,
+    `Verkauf: ${SELL_TIMING[lead.sellTiming]}`,
     `Ort: ${lead.plz} ${lead.city}`,
   ];
   const seller = [

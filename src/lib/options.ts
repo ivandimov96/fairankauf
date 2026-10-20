@@ -104,6 +104,12 @@ export const GEARBOX = {
   AUTOMATIK: "Automatik",
 } as const;
 
+export const DRIVETRAIN = {
+  FRONT: "Frontantrieb",
+  HECK: "Heckantrieb",
+  ALLRAD: "Allrad (4x4)",
+} as const;
+
 export const BODY_TYPES = [
   "Kleinwagen",
   "Limousine",
@@ -138,6 +144,13 @@ export const SERVICE_BOOK = {
   JA: "Ja",
   TEILWEISE: "Teilweise",
   NEIN: "Nein",
+} as const;
+
+export const SELL_TIMING = {
+  SOFORT: "So schnell wie möglich",
+  VIER_WOCHEN: "In den nächsten 4 Wochen",
+  DREI_MONATE: "In 1 bis 3 Monaten",
+  UNENTSCHIEDEN: "Ich informiere mich erst",
 } as const;
 
 export const CONTACT_METHOD = {

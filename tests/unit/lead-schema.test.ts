@@ -10,6 +10,7 @@ const valid: LeadFormValues = {
   mileageKm: "123.456",
   fuel: "BENZIN",
   gearbox: "MANUELL",
+  drivetrain: "ALLRAD",
   power: "150",
   powerUnit: "PS",
   bodyType: "Kombi",
@@ -20,6 +21,7 @@ const valid: LeadFormValues = {
   serviceBook: "TEILWEISE",
   previousOwners: "2",
   defects: "  Klimaanlage kühlt schwach ",
+  sellTiming: "VIER_WOCHEN",
   desiredPrice: "9500",
   plz: "10115",
   city: "Berlin",
@@ -90,6 +92,8 @@ describe("leadSchema", () => {
     [{ huDue: "2027-13" }, "huDue"],
     [{ brand: "  " }, "brand"],
     [{ fuel: "KOHLE" as never }, "fuel"],
+    [{ drivetrain: undefined as never }, "drivetrain"],
+    [{ sellTiming: "" as never }, "sellTiming"],
     [{ consent: false as never }, "consent"],
     [{ email: "keine-mail" }, "email"],
   ])("rejects %o", (values, field) => {
@@ -116,6 +120,8 @@ describe("toLeadSummary", () => {
     const row = toLeadSummary(leadSchema.parse(valid));
     expect(row).toMatchObject({
       powerKw: 110,
+      drivetrain: "ALLRAD",
+      sellTiming: "VIER_WOCHEN",
       desiredPriceCents: 950_000,
       huDueYear: 2027,
       huDueMonth: 3,

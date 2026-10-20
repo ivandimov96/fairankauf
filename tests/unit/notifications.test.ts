@@ -10,10 +10,12 @@ const lead: LeadSummary = {
   mileageKm: 123000,
   fuel: "BENZIN",
   gearbox: "MANUELL",
+  drivetrain: "FRONT",
   powerKw: 92,
   condition: "GUT",
   accident: "JA_REPARIERT",
   drivable: true,
+  sellTiming: "SOFORT",
   desiredPriceCents: 950_000,
   plz: "10115",
   city: "Berlin",
@@ -28,9 +30,10 @@ describe("formatLeadMessage", () => {
       [
         "🚗 Neue Anfrage: Volkswagen Golf 1.4 TSI",
         "EZ 05/2016 · 123.000 km",
-        "Benzin · Manuell · 92 kW",
+        "Benzin · Manuell · Frontantrieb · 92 kW",
         "Zustand: Gut · Unfall: Ja, repariert · Fahrbereit: Ja",
         "Preisvorstellung: 9.500\u00a0€",
+        "Verkauf: So schnell wie möglich",
         "Ort: 10115 Berlin",
         "",
         "👤 Erika Musterfrau",
@@ -61,7 +64,7 @@ describe("formatLeadMessage", () => {
       { ...lead, firstRegMonth: null, powerKw: null, desiredPriceCents: null, drivable: false },
     );
     expect(msg).toContain("EZ 2016 · 123.000 km");
-    expect(msg).toContain("Benzin · Manuell\n");
+    expect(msg).toContain("Benzin · Manuell · Frontantrieb\n");
     expect(msg).toContain("Preisvorstellung: keine Angabe");
     expect(msg).toContain("Fahrbereit: Nein");
   });
