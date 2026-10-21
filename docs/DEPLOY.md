@@ -15,9 +15,11 @@ show up in Vercel → **Logs**. Without any settings, leads only appear in those
 The site sends the email through your own Yahoo mailbox, so no mail service is needed.
 It needs an **app password**, which is a separate password Yahoo makes for apps.
 
-1. Log in at <https://mail.yahoo.com>, click your name (top right) → **Account Info** →
-   **Security** → **Generate and manage app passwords** (German: *App-Passwörter*).
-2. Name it `FairAnkauf`, click **Generate**, copy the 16-character password. It is shown once.
+1. Open <https://login.yahoo.com/myaccount/security/> (or in Yahoo Mail: profile icon top
+   right → **Account info** → **Security**). Scroll to **External connections** and open the
+   **App passwords** tab (German: *App-Passwörter*).
+2. Click **Generate app password**, name it `FairAnkauf`, copy the 16 letters and enter them
+   without the spaces Yahoo shows between the groups. The password is shown once.
 3. Settings for step 3:
 
    | Name | Value |
@@ -123,8 +125,9 @@ Paste secrets straight into Vercel; never send them in a chat or commit them.
 
 ## 4. Deploy
 
-**Deployments** tab → on the latest deployment click **⋯ → Redeploy** (or click **Deploy**
-if you haven't yet). Wait until it says **Ready**.
+New or changed settings only reach the site with a new deployment: **Deployments** tab → on
+the latest deployment click **⋯ → Redeploy** (or click **Deploy** if you haven't yet). Any
+push to `main` deploys as well. Wait until it says **Ready**.
 
 ## 5. Test it
 
