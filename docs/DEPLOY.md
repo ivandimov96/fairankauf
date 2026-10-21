@@ -106,18 +106,20 @@ real phone number under API Setup and complete Meta's business verification.
 
 ## 3. Add the settings
 
-Project → **Settings → Environment Variables**. Add these (Environment: Production and Preview):
+Project → **Environment Variables** (direct link:
+`https://vercel.com/<team>/fairankauf/settings/environment-variables`) → **Add Environment
+Variable**. In the dialog pick a **Type** first: **Secret** for `SMTP_PASS` and
+`WHATSAPP_ACCESS_TOKEN` (hidden after saving), **Config** for everything else. Several
+Config values can go in at once: paste lines like `NAME=value` into the Key field and
+Vercel splits them. Environment **Production** is enough.
 
 | Name | Value |
 |---|---|
-| `APP_URL` | `https://fairankauf.vercel.app` (or your own domain later, no `/` at the end) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `LEAD_EMAIL_TO` | from step 1a |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `LEAD_WHATSAPP_TO` | from step 1b |
+| `APP_URL` | optional on Vercel; set it only once you use your own domain (no `/` at the end) |
 
 Paste secrets straight into Vercel; never send them in a chat or commit them.
-
-The real name of your site is shown on the project's overview page (e.g.
-`fairankauf.vercel.app` or `fairankauf-xyz.vercel.app`); use that for `APP_URL`.
 
 ## 4. Deploy
 
