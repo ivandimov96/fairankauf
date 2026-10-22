@@ -111,6 +111,26 @@ export function LeadWizard() {
         if (form.getFieldState(name).error) void form.trigger(name);
       },
     });
+  // Kilometerstand gets thousands separators ("123.000") once the seller leaves the field.
+  const mileageReg = register("mileageKm", {
+    onChange: () => {
+      if (form.getFieldState("mileageKm").error) void form.trigger("mileageKm");
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      const digits = e.target.value.replace(/[\s.]/g, "");
+      if (/^\d+$/.test(digits)) form.setValue("mileageKm", formatNumber(Number(digits)), { shouldValidate: true });
+    },
+  });
+  // An electric car has no gearbox to choose and no engine size to ask for.
+  const fuelReg = register("fuel", {
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (form.getFieldState("fuel").error) void form.trigger("fuel");
+      if (e.target.value === "ELEKTRO") {
+        if (!form.getValues("gearbox")) form.setValue("gearbox", "AUTOMATIK", { shouldValidate: true });
+        form.setValue("displacement", "");
+      }
+    },
+  });
 
   // Restore a saved draft once, after hydration. localStorage only exists in the
   // browser, so reading it during render would make server and client HTML differ.
@@ -183,6 +203,7 @@ export function LeadWizard() {
   const current = STEPS[step]!;
   const isLast = step === STEPS.length - 1;
   const contactMethod = useWatch({ control, name: "contactMethod" });
+  const fuel = useWatch({ control, name: "fuel" });
   const brand = useWatch({ control, name: "brand" });
   // The brand the model list belongs to. Typing in the brand box empties the
   // brand until an entry is picked; the model keeps its list meanwhile.
@@ -340,6 +361,10 @@ export function LeadWizard() {
                           if (v && v !== modelBrand && form.getValues("model")) form.setValue("model", "");
                           field.onChange(v);
                           if (err("brand")) void form.trigger("brand");
+                          // Straight on to the model: its list opens on focus.
+                          if (v && !form.getValues("model") && modelsFor(v).length > 0) {
+                            requestAnimationFrame(() => document.getElementById("model")?.focus());
+                          }
                         }}
                         onBlur={field.onBlur}
                         error={err("brand")}
@@ -432,7 +457,7 @@ export function LeadWizard() {
                     placeholder="z. B. 120.000"
                     aria-invalid={!!err("mileageKm")}
                     aria-describedby={describedBy("mileageKm", err("mileageKm"))}
-                    {...reg("mileageKm")}
+                    {...mileageReg}
                   />
                 </Field>
               </div>
@@ -443,7 +468,7 @@ export function LeadWizard() {
                 options={FUEL}
                 columns="grid-cols-3 sm:grid-cols-6"
                 error={err("fuel")}
-                inputProps={reg("fuel")}
+                inputProps={fuelReg}
               />
 
               <div className="grid gap-5 sm:grid-cols-[2fr_3fr]">
@@ -459,6 +484,7 @@ export function LeadWizard() {
                   legend="Antrieb"
                   options={DRIVETRAIN}
                   columns="grid-cols-3"
+                  hint="Die meisten Autos haben Frontantrieb."
                   error={err("drivetrain")}
                   inputProps={reg("drivetrain")}
                 />
@@ -490,47 +516,51 @@ export function LeadWizard() {
                 </Field>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-3">
-                <Field id="power" label="Leistung" optional error={err("power")}>
-                  <div className="grid grid-cols-[1fr_6rem] gap-2">
-                    <Input
-                      id="power"
-                      inputMode="numeric"
-                      placeholder="z. B. 150"
-                      aria-invalid={!!err("power")}
-                      aria-describedby={describedBy("power", err("power"))}
-                      {...reg("power")}
-                    />
-                    <NativeSelect aria-label="Einheit der Leistung" {...reg("powerUnit")}>
-                      {Object.entries(POWER_UNIT).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
+              <OptionalSection>
+                <div className={cn("grid gap-5", fuel === "ELEKTRO" ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
+                  <Field id="power" label="Leistung" hint="Fahrzeugschein, Feld P.2 (in kW)." error={err("power")}>
+                    <div className="grid grid-cols-[1fr_6rem] gap-2">
+                      <Input
+                        id="power"
+                        inputMode="numeric"
+                        placeholder="z. B. 150"
+                        aria-invalid={!!err("power")}
+                        aria-describedby={describedBy("power", err("power"), "hint")}
+                        {...reg("power")}
+                      />
+                      <NativeSelect aria-label="Einheit der Leistung" {...reg("powerUnit")}>
+                        {Object.entries(POWER_UNIT).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                  </Field>
+                  {fuel !== "ELEKTRO" && (
+                    <Field id="displacement" label="Hubraum">
+                      <NativeSelect id="displacement" {...reg("displacement")}>
+                        <option value="">Bitte wählen</option>
+                        {Object.entries(DISPLACEMENT).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                  )}
+                  <Field id="bodyType" label="Karosserieform">
+                    <NativeSelect id="bodyType" {...reg("bodyType")}>
+                      <option value="">Bitte wählen</option>
+                      {BODY_TYPES.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
                         </option>
                       ))}
                     </NativeSelect>
-                  </div>
-                </Field>
-                <Field id="displacement" label="Hubraum" optional>
-                  <NativeSelect id="displacement" {...reg("displacement")}>
-                    <option value="">Bitte wählen</option>
-                    {Object.entries(DISPLACEMENT).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-                <Field id="bodyType" label="Karosserieform" optional>
-                  <NativeSelect id="bodyType" {...reg("bodyType")}>
-                    <option value="">Bitte wählen</option>
-                    {BODY_TYPES.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Field>
-              </div>
+                  </Field>
+                </div>
+              </OptionalSection>
             </>
           )}
 
@@ -562,67 +592,6 @@ export function LeadWizard() {
                 />
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="huDue"
-                  render={({ field }) => {
-                    // Stored as "YYYY-MM"; shown as two German selects instead of the
-                    // browser's month picker, which follows the phone's language.
-                    const [year = "", month = ""] = field.value ? field.value.split("-") : [];
-                    // A half-filled date ("2027-") fails validation ("Bitte wählen Sie Monat und Jahr.")
-                    const set = (y: string, m: string) => {
-                      field.onChange(y || m ? `${y}-${m}` : "");
-                      if (err("huDue")) void form.trigger("huDue");
-                    };
-                    return (
-                      <fieldset
-                        className="grid content-start gap-2"
-                        aria-describedby={err("huDue") ? "huDue-error" : undefined}
-                      >
-                        <legend className="mb-2 flex gap-2 text-sm leading-none font-medium">
-                          Nächste HU/TÜV fällig
-                          <span className="font-normal text-muted-foreground">(optional)</span>
-                        </legend>
-                        <div className="grid grid-cols-2 gap-3">
-                          <NativeSelect
-                            id="huDue"
-                            aria-label="HU-Monat"
-                            aria-invalid={!!err("huDue")}
-                            value={month}
-                            onChange={(e) => set(year, e.target.value)}
-                            onBlur={field.onBlur}
-                          >
-                            <option value="">Monat</option>
-                            {MONTHS.map((m, i) => (
-                              <option key={m} value={String(i + 1).padStart(2, "0")}>
-                                {m}
-                              </option>
-                            ))}
-                          </NativeSelect>
-                          <NativeSelect
-                            aria-label="HU-Jahr"
-                            aria-invalid={!!err("huDue")}
-                            value={year}
-                            onChange={(e) => set(e.target.value, month)}
-                            onBlur={field.onBlur}
-                          >
-                            <option value="">Jahr</option>
-                            {HU_YEARS.map((y) => (
-                              <option key={y} value={y}>
-                                {y}
-                              </option>
-                            ))}
-                          </NativeSelect>
-                        </div>
-                        {err("huDue") && (
-                          <p id="huDue-error" role="alert" className="text-sm text-destructive">
-                            {err("huDue")}
-                          </p>
-                        )}
-                      </fieldset>
-                    );
-                  }}
-                />
                 <ChoiceGroup
                   name="serviceBook"
                   legend="Scheckheftgepflegt?"
@@ -631,34 +600,6 @@ export function LeadWizard() {
                   error={err("serviceBook")}
                   inputProps={reg("serviceBook")}
                 />
-              </div>
-              <ChoiceGroup
-                name="interior"
-                legend="Innenausstattung"
-                options={INTERIOR}
-                columns="grid-cols-3 sm:grid-cols-5"
-                error={err("interior")}
-                inputProps={reg("interior")}
-              />
-              <CheckGroup
-                name="extras"
-                legend="Ausstattung"
-                optional
-                options={EXTRAS}
-                columns="grid-cols-2 sm:grid-cols-4"
-                inputProps={reg("extras")}
-              />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field id="lights" label="Scheinwerfer" optional>
-                  <NativeSelect id="lights" {...reg("lights")}>
-                    <option value="">Bitte wählen</option>
-                    {Object.entries(LIGHTS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Field>
                 <Field id="previousOwners" label="Anzahl Vorbesitzer" error={err("previousOwners")}>
                   <Input
                     id="previousOwners"
@@ -670,22 +611,108 @@ export function LeadWizard() {
                   />
                 </Field>
               </div>
-              <Field
-                id="defects"
-                label="Bekannte Mängel"
-                optional
-                hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
-                error={err("defects")}
-              >
-                <Textarea
-                  id="defects"
-                  rows={2}
-                  className="min-h-11"
-                  aria-invalid={!!err("defects")}
-                  aria-describedby={describedBy("defects", err("defects"), "hint")}
-                  {...reg("defects")}
+              <ChoiceGroup
+                name="interior"
+                legend="Innenausstattung"
+                options={INTERIOR}
+                columns="grid-cols-3 sm:grid-cols-5"
+                error={err("interior")}
+                inputProps={reg("interior")}
+              />
+              <OptionalSection>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Controller
+                    control={control}
+                    name="huDue"
+                    render={({ field }) => {
+                      // Stored as "YYYY-MM"; shown as two German selects instead of the
+                      // browser's month picker, which follows the phone's language.
+                      const [year = "", month = ""] = field.value ? field.value.split("-") : [];
+                      // A half-filled date ("2027-") fails validation ("Bitte wählen Sie Monat und Jahr.")
+                      const set = (y: string, m: string) => {
+                        field.onChange(y || m ? `${y}-${m}` : "");
+                        if (err("huDue")) void form.trigger("huDue");
+                      };
+                      return (
+                        <fieldset
+                          className="grid content-start gap-2"
+                          aria-describedby={err("huDue") ? "huDue-error" : undefined}
+                        >
+                          <legend className="mb-2 text-sm leading-none font-medium">Nächste HU/TÜV fällig</legend>
+                          <div className="grid grid-cols-2 gap-3">
+                            <NativeSelect
+                              id="huDue"
+                              aria-label="HU-Monat"
+                              aria-invalid={!!err("huDue")}
+                              value={month}
+                              onChange={(e) => set(year, e.target.value)}
+                              onBlur={field.onBlur}
+                            >
+                              <option value="">Monat</option>
+                              {MONTHS.map((m, i) => (
+                                <option key={m} value={String(i + 1).padStart(2, "0")}>
+                                  {m}
+                                </option>
+                              ))}
+                            </NativeSelect>
+                            <NativeSelect
+                              aria-label="HU-Jahr"
+                              aria-invalid={!!err("huDue")}
+                              value={year}
+                              onChange={(e) => set(e.target.value, month)}
+                              onBlur={field.onBlur}
+                            >
+                              <option value="">Jahr</option>
+                              {HU_YEARS.map((y) => (
+                                <option key={y} value={y}>
+                                  {y}
+                                </option>
+                              ))}
+                            </NativeSelect>
+                          </div>
+                          {err("huDue") && (
+                            <p id="huDue-error" role="alert" className="text-sm text-destructive">
+                              {err("huDue")}
+                            </p>
+                          )}
+                        </fieldset>
+                      );
+                    }}
+                  />
+                  <Field id="lights" label="Scheinwerfer">
+                    <NativeSelect id="lights" {...reg("lights")}>
+                      <option value="">Bitte wählen</option>
+                      {Object.entries(LIGHTS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                </div>
+                <CheckGroup
+                  name="extras"
+                  legend="Ausstattung"
+                  options={EXTRAS}
+                  columns="grid-cols-2 sm:grid-cols-4"
+                  inputProps={reg("extras")}
                 />
-              </Field>
+                <Field
+                  id="defects"
+                  label="Bekannte Mängel"
+                  hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
+                  error={err("defects")}
+                >
+                  <Textarea
+                    id="defects"
+                    rows={2}
+                    className="min-h-11"
+                    aria-invalid={!!err("defects")}
+                    aria-describedby={describedBy("defects", err("defects"), "hint")}
+                    {...reg("defects")}
+                  />
+                </Field>
+              </OptionalSection>
             </>
           )}
 
@@ -894,6 +921,21 @@ export function LeadWizard() {
         </div>
       </form>
     </div>
+  );
+}
+
+/** Fields the seller may skip, grouped after the required ones so the must-haves come first. */
+function OptionalSection({ children }: { children: React.ReactNode }) {
+  return (
+    <section aria-labelledby="optional-heading" className="grid gap-5 border-t pt-5">
+      <div>
+        <h2 id="optional-heading" className="font-semibold">
+          Weitere Angaben <span className="font-normal text-muted-foreground">(optional)</span>
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">Je mehr wir wissen, desto genauer wird unser Angebot.</p>
+      </div>
+      {children}
+    </section>
   );
 }
 

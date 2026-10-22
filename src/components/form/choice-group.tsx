@@ -8,6 +8,8 @@ type ChoiceGroupProps = {
   legend: string;
   options: Record<string, string>;
   optional?: boolean;
+  /** Help text under the choices, e.g. where to find the value. Hidden while an error shows. */
+  hint?: string;
   error?: string;
   /** Grid columns for the choices, e.g. "grid-cols-3 sm:grid-cols-6". Default: two columns. */
   columns?: string;
@@ -21,14 +23,19 @@ export function ChoiceGroup({
   legend,
   options,
   optional,
+  hint,
   error,
   columns = "grid-cols-2",
   className,
   inputProps,
 }: ChoiceGroupProps) {
   const errorId = `${name}-error`;
+  const hintId = `${name}-hint`;
   return (
-    <fieldset className={cn("grid content-start gap-2", className)} aria-describedby={error ? errorId : undefined}>
+    <fieldset
+      className={cn("grid content-start gap-2", className)}
+      aria-describedby={error ? errorId : hint ? hintId : undefined}
+    >
       <legend className="mb-2 text-sm leading-none font-medium">
         {legend}
         {optional && <span className="ml-2 font-normal text-muted-foreground">(optional)</span>}
@@ -50,6 +57,11 @@ export function ChoiceGroup({
           </label>
         ))}
       </div>
+      {hint && !error && (
+        <p id={hintId} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      )}
       {error && (
         <p id={errorId} role="alert" className="text-sm text-destructive">
           {error}

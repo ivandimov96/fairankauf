@@ -158,7 +158,7 @@ export const INTERIOR = {
   LEDER: "Leder",
   KUNSTLEDER: "Kunstleder",
   ALCANTARA: "Alcantara",
-  KOMBINATION: "Kombination",
+  TEILLEDER: "Teilleder",
 } as const;
 
 export const LIGHTS = {

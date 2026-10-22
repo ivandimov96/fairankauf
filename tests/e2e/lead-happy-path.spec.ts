@@ -36,14 +36,20 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
 
   await page.getByRole("combobox", { name: "Marke" }).fill("volks");
   await page.getByRole("option", { name: "Volkswagen" }).click();
-  // The model list follows the brand; "Golf" is there, anything else can be typed in.
+  // The model list follows the brand and gets the focus; "Golf" is there, anything else can be typed in.
+  await expect(page.getByRole("combobox", { name: "Modell" })).toBeFocused();
   await page.getByRole("combobox", { name: "Modell" }).fill("gol");
   await expect(page.getByRole("option", { name: "Golf Variant" })).toBeVisible();
   await page.getByRole("option", { name: "Golf", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "Modell" })).toHaveValue("Golf");
   // The landing page stays mounted but hidden after client navigation, so target the form field by id.
   await expect(page.locator("#firstRegYear")).toHaveValue("2016");
-  await page.getByLabel("Kilometerstand (km)").fill("123.000");
+  await page.getByLabel("Kilometerstand (km)").fill("123000");
+  // An electric car needs no gearbox or engine size; switching back brings them.
+  await choose(page, "Elektro");
+  await expect(page.getByLabel("Kilometerstand (km)")).toHaveValue("123.000");
+  await expect(page.getByRole("radio", { name: "Automatik" })).toBeChecked();
+  await expect(page.getByLabel("Hubraum")).toHaveCount(0);
   await choose(page, "Benzin");
   await choose(page, "Manuell");
   await choose(page, "Allrad (4x4)");
