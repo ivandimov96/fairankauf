@@ -12,7 +12,7 @@ export default function DatenschutzPage() {
         Platzhalter: Dieser Text wird vor dem Start durch eine vollständige Datenschutzerklärung ersetzt.
       </p>
       <h2 className="mt-8 text-xl font-bold">1. Verantwortlicher</h2>
-      <p className="mt-2">[Vorname Nachname], FairAnkauf, [Anschrift], [E-Mail-Adresse]</p>
+      <p className="mt-2">[Vorname Nachname], Wir kaufen Ihr Auto, [Anschrift], [E-Mail-Adresse]</p>
       <h2 className="mt-8 text-xl font-bold">2. Welche Daten wir verarbeiten</h2>
       <p className="mt-2">
         Wenn Sie unser Formular ausfüllen, verarbeiten wir Ihre Angaben zum Fahrzeug, Ihren

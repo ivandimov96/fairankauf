@@ -1,16 +1,13 @@
 import Link from "next/link";
 
-import { LogoMark } from "@/components/site/logo";
+import { Logo } from "@/components/site/logo";
 
 export function SiteFooter() {
   return (
     <footer className="bg-ink text-ink-foreground">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
-          <p className="flex items-center gap-2 font-display text-lg font-bold">
-            <LogoMark className="size-7" />
-            FairAnkauf
-          </p>
+          <Logo inverted />
           <p className="max-w-sm opacity-75">Ihr Auto fair verkaufen: kostenlos, unverbindlich und ohne Inserat.</p>
         </div>
         <nav aria-label="Rechtliches" className="flex gap-6">

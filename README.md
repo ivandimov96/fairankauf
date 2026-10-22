@@ -1,4 +1,4 @@
-# FairAnkauf
+# Wir kaufen Ihr Auto
 
 Website for buying used cars from private sellers in Germany: a German landing page with
 a multi-step lead form. A lead is sent by email (SMTP) and WhatsApp (Meta Cloud API) to the owner; both are configured through environment variables, see `docs/DEPLOY.md`. There is no database.

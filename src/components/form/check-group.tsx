@@ -38,14 +38,14 @@ export function CheckGroup({
           <label
             key={value}
             className={cn(
-              "group/choice flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-input bg-card px-2 py-2 text-center text-sm font-medium shadow-xs transition-colors select-none hover:border-primary/60",
-              "has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground",
+              "group/choice flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-input bg-card px-2 py-2 text-center text-sm font-medium shadow-xs transition-colors select-none hover:border-ink/60",
+              "has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-ink-foreground",
               "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
               error && "border-destructive",
             )}
           >
             <input type="checkbox" value={value} className="sr-only" {...inputProps} />
-            <CheckIcon aria-hidden className="hidden size-4 shrink-0 group-has-[:checked]/choice:block" strokeWidth={3} />
+            <CheckIcon aria-hidden className="hidden size-4 shrink-0 text-signal group-has-[:checked]/choice:block" strokeWidth={3} />
             {label}
           </label>
         ))}

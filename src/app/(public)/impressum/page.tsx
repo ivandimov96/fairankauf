@@ -14,7 +14,7 @@ export default function ImpressumPage() {
       <p className="mt-2">
         [Vorname Nachname]
         <br />
-        FairAnkauf
+        Wir kaufen Ihr Auto
         <br />
         [Straße Hausnummer]
         <br />

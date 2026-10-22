@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { QuickStart } from "@/components/form/quick-start";
-import { LicensePlate } from "@/components/site/license-plate";
+import { LogoMark } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 
 const PROMISES = ["100 % kostenlos", "Unverbindlich", "Abholung und Abmeldung inklusive"];
@@ -102,8 +102,12 @@ export default function HomePage() {
             <p className="w-fit rounded-full border border-ink-foreground/25 px-3 py-1 text-sm font-medium">
               Autoankauf von privat
             </p>
-            <h1 className="text-[2.6rem] leading-[1.05] font-bold tracking-tight sm:text-6xl">
-              Auto verkaufen. <span className="text-signal">Fair.</span> Ohne Stress.
+            <h1 className="text-[2.5rem] leading-[1.05] font-bold tracking-tight sm:text-5xl lg:text-[3.4rem]">
+              <span className="block">
+                Wir kaufen
+                <br className="sm:hidden" /> Ihr Auto.
+              </span>
+              <span className="text-signal">Fair. Schnell. Ohne Stress.</span>
             </h1>
             <p className="hidden max-w-xl text-lg opacity-85 sm:block">
               Kein Inserat, keine Probefahrten mit Fremden, kein Feilschen. Sie beschreiben Ihr Auto, wir machen Ihnen
@@ -121,9 +125,9 @@ export default function HomePage() {
             </ul>
           </div>
 
-          <div className="grid">
-            <LicensePlate className="relative z-10 -mb-6 h-14 rotate-[-4deg] justify-self-end sm:mr-6 sm:h-16" />
-            <div className="rounded-2xl bg-card p-5 pt-9 text-card-foreground shadow-2xl ring-1 ring-black/5 sm:p-7 sm:pt-10">
+          <div className="grid gap-4">
+            <LogoMark className="h-12 justify-self-end sm:mr-2 sm:h-16" />
+            <div className="rounded-2xl bg-card p-5 text-card-foreground shadow-2xl ring-1 ring-black/5 sm:p-7">
               <h2 className="text-2xl font-bold tracking-tight">Was ist Ihr Auto wert?</h2>
               <p className="mt-1 mb-5 text-muted-foreground">Starten Sie hier, den Rest fragen wir im nächsten Schritt.</p>
               <QuickStart />
@@ -150,11 +154,11 @@ export default function HomePage() {
       </section>
 
       {/* Any condition */}
-      <section aria-labelledby="jeder-zustand" className="bg-primary text-primary-foreground">
+      <section aria-labelledby="jeder-zustand" className="bg-ink text-ink-foreground">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 lg:grid-cols-[1fr_1.3fr] lg:items-center">
           <div>
             <h2 id="jeder-zustand" className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Wir kaufen Ihr Auto. <span className="text-signal">In jedem Zustand.</span>
+              Jedes Auto. <span className="text-signal">In jedem Zustand.</span>
             </h2>
             <p className="mt-3 max-w-md opacity-85">
               Ob gepflegter Kombi oder Auto mit Macken: Wir machen Ihnen ein faires Angebot.
@@ -164,7 +168,7 @@ export default function HomePage() {
             {ANY_CONDITION.map((c) => (
               <li
                 key={c}
-                className="flex items-center gap-2 rounded-full bg-primary-foreground/10 px-4 py-2.5 font-medium ring-1 ring-primary-foreground/20"
+                className="flex items-center gap-2 rounded-full bg-ink-foreground/10 px-4 py-2.5 font-medium ring-1 ring-ink-foreground/20"
               >
                 <CheckIcon aria-hidden className="size-4 text-signal" strokeWidth={3} />
                 {c}
@@ -199,7 +203,7 @@ export default function HomePage() {
             <h2 id="faq" className="text-3xl font-bold tracking-tight sm:text-4xl">
               Häufige Fragen
             </h2>
-            <p className="mt-3 text-muted-foreground">Alles Wichtige zum Autoverkauf bei FairAnkauf.</p>
+            <p className="mt-3 text-muted-foreground">Alles Wichtige zum Autoverkauf bei uns.</p>
           </div>
           <div className="grid gap-3">
             {FAQ.map((f) => (
@@ -222,7 +226,7 @@ export default function HomePage() {
 
       {/* Final call to action */}
       <section className="mx-auto w-full max-w-6xl px-4 py-16">
-        <div className="relative grid gap-6 overflow-hidden rounded-3xl bg-signal p-8 text-signal-foreground sm:p-12 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="relative grid gap-6 overflow-hidden rounded-3xl bg-ink p-8 text-ink-foreground sm:p-12 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Bereit für ein faires Angebot?</h2>
             <p className="mt-2 text-lg">Kostenlos und unverbindlich. In etwa 2 Minuten erledigt.</p>

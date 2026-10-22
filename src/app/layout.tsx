@@ -15,7 +15,7 @@ const bricolage = Bricolage_Grotesque({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: "FairAnkauf – Auto schnell und fair verkaufen", template: "%s | FairAnkauf" },
+  title: { default: `${SITE_NAME} – schnell, fair und ohne Stress`, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   alternates: { canonical: "/" },
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "de_DE",
     siteName: SITE_NAME,
-    title: "FairAnkauf – Auto schnell und fair verkaufen",
+    title: `${SITE_NAME} – schnell, fair und ohne Stress`,
     description: SITE_DESCRIPTION,
   },
   twitter: { card: "summary_large_image" },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#173f33",
+  themeColor: "#1b1c1f",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

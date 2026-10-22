@@ -45,7 +45,7 @@ describe("sendLeadEmail", () => {
     expect(sendMail).toHaveBeenCalledTimes(1);
     const mail = sendMail.mock.calls[0]![0];
     expect(mail).toMatchObject({
-      from: { name: "FairAnkauf", address: "ivan@example.com" },
+      from: { name: "Wir kaufen Ihr Auto", address: "ivan@example.com" },
       to: ["ivan@example.com"],
       subject: "Neue Anfrage: Volkswagen Golf, EZ 2016, 123.000 km",
       replyTo: "erika@example.de",

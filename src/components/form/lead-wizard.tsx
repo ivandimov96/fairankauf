@@ -23,7 +23,7 @@ import { CheckGroup } from "@/components/form/check-group";
 import { ChoiceGroup } from "@/components/form/choice-group";
 import { Field, FieldErrors, describedBy } from "@/components/form/field";
 import { BRAND_LABELS, ListPicker, MODEL_LABELS } from "@/components/form/list-picker";
-import { LicensePlate } from "@/components/site/license-plate";
+import { LogoMark } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -219,7 +219,7 @@ export function LeadWizard() {
         className="hidden rounded-2xl bg-ink p-6 text-ink-foreground lg:sticky lg:top-20 lg:grid lg:gap-7"
       >
         <div>
-          <LicensePlate className="h-10 rotate-[-3deg]" />
+          <LogoMark className="h-9" />
           <h2 className="mt-5 text-xl font-bold">Ihr Angebot in 4 Schritten</h2>
           <p className="mt-1 text-sm opacity-75">Dauert etwa 2 Minuten.</p>
         </div>
@@ -842,7 +842,7 @@ export function LeadWizard() {
                     {...reg("consent")}
                   />
                   <span>
-                    Ich bin einverstanden, dass FairAnkauf meine Angaben verarbeitet, um mich wegen meines Autos zu
+                    Ich bin einverstanden, dass „Wir kaufen Ihr Auto“ meine Angaben verarbeitet, um mich wegen meines Autos zu
                     kontaktieren. Details in der{" "}
                     <Link href="/datenschutz" target="_blank" className="text-primary underline underline-offset-4">
                       Datenschutzerklärung

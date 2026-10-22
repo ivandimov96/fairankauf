@@ -27,7 +27,7 @@ export async function sendLeadEmail(
   transport: MailTransport = createTransport(cfg),
 ): Promise<void> {
   await transport.sendMail({
-    from: { name: "FairAnkauf", address: cfg.from },
+    from: { name: "Wir kaufen Ihr Auto", address: cfg.from },
     to: cfg.to,
     subject: leadSubject(lead),
     text: formatLeadMessage(lead),

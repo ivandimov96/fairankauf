@@ -11,7 +11,10 @@ export function HeaderCta() {
   if (pathname.startsWith("/verkaufen")) return null;
   return (
     <Button asChild size="sm" className="h-10 px-4">
-      <Link href="/verkaufen">Angebot anfordern</Link>
+      <Link href="/verkaufen">
+        <span className="sm:hidden">Angebot</span>
+        <span className="hidden sm:inline">Angebot anfordern</span>
+      </Link>
     </Button>
   );
 }

@@ -10,9 +10,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-        // Main call to action: signal yellow, readable on dark green and on paper.
+        // Main call to action: brand red with a little depth.
         signal:
-          "bg-signal text-signal-foreground font-semibold shadow-[0_2px_0_0_oklch(0.23_0.035_165/0.25)] hover:brightness-105 active:translate-y-px",
+          "bg-signal text-signal-foreground font-semibold shadow-[0_2px_0_0_oklch(0_0_0/0.3)] hover:brightness-110 active:translate-y-px",
         destructive:
           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline:
