@@ -143,7 +143,9 @@ Every push to `main` on GitHub deploys automatically.
 
 ## Before you advertise the site
 
-- Replace the placeholder **Impressum** and **Datenschutzerklärung** (legally required in
-  Germany; e.g. generate them with eRecht24).
+- **Impressum** and **Datenschutzerklärung** carry the business details from `src/lib/site.ts`
+  (`COMPANY`); update them there when the address or phone changes. The Datenschutzerklärung
+  describes exactly what the site does (email + WhatsApp via Meta, Vercel hosting, no cookies);
+  if you enable Turnstile, add a paragraph about Cloudflare to it.
 - Optional, if spam arrives: add Cloudflare Turnstile. Create a free site at <https://dash.cloudflare.com> → Turnstile, then set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` and redeploy. A hidden trap field and a limit of 5 requests per hour per visitor are always on.
 - Optional: connect your own domain under Settings → Domains, then update `APP_URL`.

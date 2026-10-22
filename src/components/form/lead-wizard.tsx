@@ -566,22 +566,22 @@ export function LeadWizard() {
 
           {current.key === "condition" && (
             <>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <ChoiceGroup
-                  name="condition"
-                  legend="Allgemeiner Zustand"
-                  options={CONDITION}
-                  error={err("condition")}
-                  inputProps={reg("condition")}
-                />
-                <ChoiceGroup
-                  name="interiorCondition"
-                  legend="Innenzustand"
-                  options={CONDITION}
-                  error={err("interiorCondition")}
-                  inputProps={reg("interiorCondition")}
-                />
-              </div>
+              <ChoiceGroup
+                name="condition"
+                legend="Allgemeiner Zustand"
+                options={CONDITION}
+                columns="grid-cols-2 sm:grid-cols-4"
+                error={err("condition")}
+                inputProps={reg("condition")}
+              />
+              <ChoiceGroup
+                name="interiorCondition"
+                legend="Innenzustand"
+                options={CONDITION}
+                columns="grid-cols-2 sm:grid-cols-4"
+                error={err("interiorCondition")}
+                inputProps={reg("interiorCondition")}
+              />
               <div className="grid gap-5 sm:grid-cols-[3fr_2fr]">
                 <ChoiceGroup
                   name="accident"
@@ -621,7 +621,7 @@ export function LeadWizard() {
               </div>
               <ChoiceGroup
                 name="interior"
-                legend="Innenausstattung"
+                legend="Material der Innenausstattung"
                 options={INTERIOR}
                 columns="grid-cols-3 sm:grid-cols-5"
                 error={err("interior")}

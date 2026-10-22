@@ -195,7 +195,7 @@ export const CONDITION = {
   SEHR_GUT: "Sehr gut",
   GUT: "Gut",
   GEBRAUCHT: "Gebraucht",
-  DEFEKT: "Defekt",
+  STARK_GEBRAUCHT: "Stark gebraucht",
 } as const;
 
 export const ACCIDENT = {

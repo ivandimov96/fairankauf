@@ -6,5 +6,15 @@ export function siteUrl(): string {
 }
 
 export const SITE_NAME = "Wir kaufen Ihr Auto";
+
+/** The business behind the site, shown in the Impressum and the Datenschutzerklärung. */
+export const COMPANY = {
+  name: "D&M Fahrzeughandel",
+  street: "Salinenstraße 64b",
+  city: "61231 Bad Nauheim",
+  phone: "0151 56041400",
+  phoneE164: "+4915156041400",
+  vatId: "DE335165259",
+} as const;
 export const SITE_DESCRIPTION =
   "Verkaufen Sie Ihr Auto schnell, fair und ohne Aufwand: Daten in 2 Minuten eingeben, persönliches Angebot erhalten, kostenlose Abholung und Abmeldung.";

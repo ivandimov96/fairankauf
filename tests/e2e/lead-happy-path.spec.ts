@@ -66,7 +66,7 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await choose(page.getByRole("group", { name: "Unfallschaden" }), "Nein");
   await choose(page.getByRole("group", { name: "Ist das Auto fahrbereit?" }), "Ja");
   await choose(page.getByRole("group", { name: "Scheckheftgepflegt?" }), "Ja");
-  await choose(page.getByRole("group", { name: "Innenausstattung" }), "Leder");
+  await choose(page.getByRole("group", { name: "Material der Innenausstattung" }), "Leder");
   await page.getByLabel("Scheinwerfer").selectOption("LED");
   await tick(page.getByRole("group", { name: "Ausstattung" }), "Navigation");
   await tick(page.getByRole("group", { name: "Ausstattung" }), "Sitzheizung");

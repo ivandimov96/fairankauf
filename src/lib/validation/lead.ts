@@ -102,7 +102,7 @@ export const leadStep2 = z.object({
     .refine((v) => v === "" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v), "Bitte wählen Sie Monat und Jahr.")
     .transform((v) => v || null),
   serviceBook: choice(SERVICE_BOOK, "Bitte wählen Sie eine Option."),
-  interior: choice(INTERIOR, "Bitte wählen Sie die Innenausstattung."),
+  interior: choice(INTERIOR, "Bitte wählen Sie das Material der Innenausstattung."),
   lights: optionalChoice(LIGHTS),
   // Checkboxes sharing one name give an array of the checked values.
   extras: z.array(z.enum(keysOf(EXTRAS))).default([]),

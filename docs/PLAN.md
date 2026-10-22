@@ -67,7 +67,7 @@ browser as a draft until it is sent). Money is integer cents internally.
    approved template; each message has a small Meta fee.
 4. **GDPR:** the site stores no lead data; deletion requests are handled by deleting the
    notification messages. The Datenschutzerklärung must say so and name the providers.
-5. **Impressum/Datenschutz** placeholders must be replaced with real legal text before launch.
+5. **Impressum/Datenschutz** filled with the real business details on 2026-10-22 (`src/lib/site.ts`).
 6. **Accounts needed before deploy:** Vercel; whatever the next channel needs. Cloudflare only for optional Turnstile.
 
 ## 6. Phases
