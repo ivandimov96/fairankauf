@@ -62,6 +62,7 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   // Step 2
   await expect(page.getByRole("heading", { name: "Zustand", exact: true })).toBeVisible();
   await choose(page.getByRole("group", { name: "Allgemeiner Zustand" }), "Gut");
+  await choose(page.getByRole("group", { name: "Innenzustand" }), "Sehr gut");
   await choose(page.getByRole("group", { name: "Unfallschaden" }), "Nein");
   await choose(page.getByRole("group", { name: "Ist das Auto fahrbereit?" }), "Ja");
   await choose(page.getByRole("group", { name: "Scheckheftgepflegt?" }), "Ja");
@@ -70,6 +71,7 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await tick(page.getByRole("group", { name: "Ausstattung" }), "Navigation");
   await tick(page.getByRole("group", { name: "Ausstattung" }), "Sitzheizung");
   await page.getByLabel("Anzahl Vorbesitzer").fill("2");
+  await page.getByLabel("Sonstiges").fill("Anhängerkupplung");
 
   // Draft survives a reload.
   await page.reload();
@@ -113,8 +115,8 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
         values: {
           brand: "Audi", model: "A4", firstRegYear: "2015", firstRegMonth: "", mileageKm: "150000",
           fuel: "DIESEL", gearbox: "MANUELL", drivetrain: "FRONT", doors: "5", color: "GRAU", power: "",
-          powerUnit: "PS", displacement: "", bodyType: "", condition: "GUT", accident: "NEIN", drivable: "JA",
-          huDue: "", serviceBook: "JA", interior: "STOFF", lights: "", extras: [], previousOwners: "1",
+          powerUnit: "PS", displacement: "", bodyType: "", condition: "GUT", interiorCondition: "GUT", accident: "NEIN", drivable: "JA",
+          huDue: "", serviceBook: "JA", interior: "STOFF", lights: "", extras: [], previousOwners: "1", notes: "",
           defects: "", sellTiming: "SOFORT", desiredPrice: "", plz: "10115", city: "Berlin",
           firstName: "Bot", lastName: "Bot", phone: "015112345678", email: "", contactMethod: "ANRUF", consent: true,
         },

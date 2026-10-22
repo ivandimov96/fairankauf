@@ -25,6 +25,7 @@ const lead: LeadSummary = {
   color: "SCHWARZ",
   powerKw: null,
   condition: "GUT",
+  interiorCondition: "GUT",
   accident: "NEIN",
   drivable: true,
   sellTiming: "DREI_MONATE",

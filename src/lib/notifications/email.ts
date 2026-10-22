@@ -3,7 +3,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 
 import type { EmailConfig } from "./config";
-import { formatLeadMessage, leadSubject, type LeadSummary } from "./format";
+import { formatLeadHtml, formatLeadMessage, leadSubject, type LeadSummary } from "./format";
 
 export type MailTransport = { sendMail: (mail: Record<string, unknown>) => Promise<unknown> };
 
@@ -20,7 +20,7 @@ function createTransport(cfg: EmailConfig): MailTransport {
   });
 }
 
-/** Sends the lead as a plain-text email through Ivan's own mailbox (SMTP). */
+/** Sends the lead as an email (HTML with a plain-text twin) through Ivan's own mailbox (SMTP). */
 export async function sendLeadEmail(
   lead: LeadSummary,
   cfg: EmailConfig,
@@ -31,6 +31,7 @@ export async function sendLeadEmail(
     to: cfg.to,
     subject: leadSubject(lead),
     text: formatLeadMessage(lead),
+    html: formatLeadHtml(lead),
     // "Antworten" in the mail client goes straight to the seller when they left an address.
     ...(lead.email ? { replyTo: lead.email } : {}),
   });

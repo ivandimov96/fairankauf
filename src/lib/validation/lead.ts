@@ -92,6 +92,7 @@ export const leadStep1 = z.object({
 
 export const leadStep2 = z.object({
   condition: choice(CONDITION, "Bitte wählen Sie den Zustand."),
+  interiorCondition: choice(CONDITION, "Bitte wählen Sie den Innenzustand."),
   accident: choice(ACCIDENT, "Bitte beantworten Sie die Frage zum Unfallschaden."),
   drivable: choice(YES_NO, "Bitte beantworten Sie, ob das Auto fahrbereit ist."),
   // <input type="month"> gives "YYYY-MM"; empty when not filled in.
@@ -107,6 +108,7 @@ export const leadStep2 = z.object({
   extras: z.array(z.enum(keysOf(EXTRAS))).default([]),
   previousOwners: requiredInt(0, () => 20, "Bitte geben Sie die Anzahl der Vorbesitzer ein."),
   defects: optionalText(2000),
+  notes: optionalText(2000),
 });
 
 export const leadStep4 = z.object({
@@ -181,6 +183,7 @@ export const EMPTY_LEAD_FORM = {
   huDue: "",
   previousOwners: "",
   defects: "",
+  notes: "",
   desiredPrice: "",
   plz: "",
   city: "",
@@ -217,6 +220,7 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     displacement: input.displacement,
     bodyType: input.bodyType,
     condition: input.condition,
+    interiorCondition: input.interiorCondition,
     accident: input.accident,
     drivable: input.drivable === "JA",
     huDueYear: huYear ?? null,
@@ -227,6 +231,7 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     extras: input.extras,
     previousOwners: input.previousOwners,
     defects: input.defects,
+    notes: input.notes,
     sellTiming: input.sellTiming,
     desiredPriceCents: input.desiredPrice === null ? null : input.desiredPrice * 100,
     plz: input.plz,

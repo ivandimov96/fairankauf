@@ -566,14 +566,22 @@ export function LeadWizard() {
 
           {current.key === "condition" && (
             <>
-              <ChoiceGroup
-                name="condition"
-                legend="Allgemeiner Zustand"
-                options={CONDITION}
-                columns="grid-cols-2 sm:grid-cols-4"
-                error={err("condition")}
-                inputProps={reg("condition")}
-              />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <ChoiceGroup
+                  name="condition"
+                  legend="Allgemeiner Zustand"
+                  options={CONDITION}
+                  error={err("condition")}
+                  inputProps={reg("condition")}
+                />
+                <ChoiceGroup
+                  name="interiorCondition"
+                  legend="Innenzustand"
+                  options={CONDITION}
+                  error={err("interiorCondition")}
+                  inputProps={reg("interiorCondition")}
+                />
+              </div>
               <div className="grid gap-5 sm:grid-cols-[3fr_2fr]">
                 <ChoiceGroup
                   name="accident"
@@ -697,21 +705,38 @@ export function LeadWizard() {
                   columns="grid-cols-2 sm:grid-cols-4"
                   inputProps={reg("extras")}
                 />
-                <Field
-                  id="defects"
-                  label="Bekannte Mängel"
-                  hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
-                  error={err("defects")}
-                >
-                  <Textarea
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field
                     id="defects"
-                    rows={2}
-                    className="min-h-11"
-                    aria-invalid={!!err("defects")}
-                    aria-describedby={describedBy("defects", err("defects"), "hint")}
-                    {...reg("defects")}
-                  />
-                </Field>
+                    label="Bekannte Mängel"
+                    hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
+                    error={err("defects")}
+                  >
+                    <Textarea
+                      id="defects"
+                      rows={2}
+                      className="min-h-11"
+                      aria-invalid={!!err("defects")}
+                      aria-describedby={describedBy("defects", err("defects"), "hint")}
+                      {...reg("defects")}
+                    />
+                  </Field>
+                  <Field
+                    id="notes"
+                    label="Sonstiges"
+                    hint="Was wir noch wissen sollten, z. B. Tuning, neue Reifen, Anhängerkupplung"
+                    error={err("notes")}
+                  >
+                    <Textarea
+                      id="notes"
+                      rows={2}
+                      className="min-h-11"
+                      aria-invalid={!!err("notes")}
+                      aria-describedby={describedBy("notes", err("notes"), "hint")}
+                      {...reg("notes")}
+                    />
+                  </Field>
+                </div>
               </OptionalSection>
             </>
           )}

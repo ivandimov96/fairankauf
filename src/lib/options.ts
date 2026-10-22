@@ -164,6 +164,7 @@ export const INTERIOR = {
 export const LIGHTS = {
   HALOGEN: "Halogen",
   XENON: "Xenon",
+  BI_XENON: "Bi-Xenon",
   LED: "LED",
   MATRIX: "Matrix-LED / Laser",
 } as const;

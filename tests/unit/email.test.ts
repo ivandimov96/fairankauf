@@ -17,6 +17,7 @@ const lead: LeadSummary = {
   color: "SCHWARZ",
   powerKw: 92,
   condition: "GUT",
+  interiorCondition: "SEHR_GUT",
   accident: "NEIN",
   drivable: true,
   sellTiming: "SOFORT",
@@ -39,7 +40,7 @@ const cfg: EmailConfig = {
 };
 
 describe("sendLeadEmail", () => {
-  it("mails the full lead text with the seller as reply-to", async () => {
+  it("mails the lead as HTML plus plain text, with the seller as reply-to", async () => {
     const sendMail = vi.fn().mockResolvedValue({ messageId: "x" });
     await sendLeadEmail(lead, cfg, { sendMail });
     expect(sendMail).toHaveBeenCalledTimes(1);
@@ -51,9 +52,13 @@ describe("sendLeadEmail", () => {
       replyTo: "erika@example.de",
     });
     expect(mail.text).toContain("🚗 Neue Anfrage: Volkswagen Golf");
-    expect(mail.text).toContain("Frontantrieb");
-    expect(mail.text).toContain("Verkauf: So schnell wie möglich");
-    expect(mail.text).toContain("📞 +49 1511 2345678 (bevorzugt: E-Mail)");
+    expect(mail.text).toContain("Antrieb: Frontantrieb");
+    expect(mail.text).toContain("Innenraum: Sehr gut");
+    expect(mail.text).toContain("Zeitpunkt: So schnell wie möglich");
+    expect(mail.text).toContain("Telefon: +49 1511 2345678\nE-Mail: erika@example.de\nKontakt per: E-Mail");
+    expect(mail.html).toContain('href="tel:+4915112345678"');
+    expect(mail.html).toContain('href="https://wa.me/4915112345678"');
+    expect(mail.html).toContain('href="mailto:erika@example.de"');
   });
 
   it("leaves reply-to out when the seller gave no email", async () => {
