@@ -80,8 +80,8 @@ WhatsApp messages come from Meta's **WhatsApp Business Platform**. Two things to
    2073162733332826); these steps are for recreating it in another account.
 
    Meta asks for a sample for each variable; use these:
-   1 `Volkswagen Golf 1.4 TSI` · 2 `EZ 05/2016 · 123.000 km` · 3 `Benzin · Manuell · Frontantrieb · 92 kW` ·
-   4 `Gut · Unfall: Nein · Fahrbereit: Ja` · 5 `Karosserie: Kombi · Vorbesitzer: 2` · 6 `9.500 €` ·
+   1 `Volkswagen Golf 1.4 TSI` · 2 `EZ 05/2016 · 123.000 km` · 3 `Benzin · Manuell · Frontantrieb · 5 Türen · Grau · 92 kW` ·
+   4 `Gut · Unfall: Nein · Fahrbereit: Ja` · 5 `Karosserie: Kombi · Hubraum: 1,4 l · Innen: Stoff · Vorbesitzer: 2` · 6 `9.500 €` ·
    7 `So schnell wie möglich` · 8 `10115 Berlin` · 9 `Erika Musterfrau · +49 1511 2345678 (WhatsApp)`.
    Submit and wait until the status is **Active**.
 6. Settings for step 3:

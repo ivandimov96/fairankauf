@@ -5,11 +5,17 @@ import type { LeadSummary } from "@/lib/notifications/format";
 import {
   ACCIDENT,
   BODY_TYPES,
+  COLORS,
   CONDITION,
   CONTACT_METHOD,
+  DISPLACEMENT,
+  DOORS,
   DRIVETRAIN,
+  EXTRAS,
   FUEL,
   GEARBOX,
+  INTERIOR,
+  LIGHTS,
   POWER_UNIT,
   SELL_TIMING,
   SERVICE_BOOK,
@@ -63,6 +69,10 @@ const optionalInt = (min: number, max: number, message: string) =>
 const choice = <T extends Record<string, string>>(obj: T, message: string) =>
   z.enum(keysOf(obj), { error: message });
 
+/** A select with a "Bitte wählen" entry: "" becomes null. */
+const optionalChoice = <T extends Record<string, string>>(obj: T) =>
+  z.union([z.enum(keysOf(obj)), z.literal("")]).transform((v) => v || null);
+
 export const leadStep1 = z.object({
   brand: requiredText(60, "Bitte wählen Sie die Marke."),
   model: requiredText(80, "Bitte geben Sie das Modell ein."),
@@ -72,8 +82,11 @@ export const leadStep1 = z.object({
   fuel: choice(FUEL, "Bitte wählen Sie die Kraftstoffart."),
   gearbox: choice(GEARBOX, "Bitte wählen Sie das Getriebe."),
   drivetrain: choice(DRIVETRAIN, "Bitte wählen Sie den Antrieb."),
+  doors: choice(DOORS, "Bitte wählen Sie die Anzahl der Türen."),
+  color: choice(COLORS, "Bitte wählen Sie die Farbe."),
   power: optionalInt(1, 2000, "Bitte geben Sie eine gültige Leistung ein."),
   powerUnit: choice(POWER_UNIT, "Bitte wählen Sie kW oder PS."),
+  displacement: optionalChoice(DISPLACEMENT),
   bodyType: z.union([z.enum(BODY_TYPES), z.literal("")]).transform((v) => v || null),
 });
 
@@ -88,6 +101,10 @@ export const leadStep2 = z.object({
     .refine((v) => v === "" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v), "Bitte wählen Sie Monat und Jahr.")
     .transform((v) => v || null),
   serviceBook: choice(SERVICE_BOOK, "Bitte wählen Sie eine Option."),
+  interior: choice(INTERIOR, "Bitte wählen Sie die Innenausstattung."),
+  lights: optionalChoice(LIGHTS),
+  // Checkboxes sharing one name give an array of the checked values.
+  extras: z.array(z.enum(keysOf(EXTRAS))).default([]),
   previousOwners: requiredInt(0, () => 20, "Bitte geben Sie die Anzahl der Vorbesitzer ein."),
   defects: optionalText(2000),
 });
@@ -103,7 +120,8 @@ export const leadStep4 = z.object({
 });
 
 export const leadStep5 = z.object({
-  name: requiredText(100, "Bitte geben Sie Ihren Namen ein."),
+  firstName: requiredText(60, "Bitte geben Sie Ihren Vornamen ein."),
+  lastName: requiredText(60, "Bitte geben Sie Ihren Nachnamen ein."),
   phone: z
     .string()
     .trim()
@@ -156,14 +174,18 @@ export const EMPTY_LEAD_FORM = {
   mileageKm: "",
   power: "",
   powerUnit: "PS",
+  displacement: "",
   bodyType: "",
+  lights: "",
+  extras: [],
   huDue: "",
   previousOwners: "",
   defects: "",
   desiredPrice: "",
   plz: "",
   city: "",
-  name: "",
+  firstName: "",
+  lastName: "",
   phone: "",
   email: "",
 } satisfies Partial<LeadFormValues>;
@@ -189,7 +211,10 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     fuel: input.fuel,
     gearbox: input.gearbox,
     drivetrain: input.drivetrain,
+    doors: input.doors,
+    color: input.color,
     powerKw,
+    displacement: input.displacement,
     bodyType: input.bodyType,
     condition: input.condition,
     accident: input.accident,
@@ -197,13 +222,16 @@ export function toLeadSummary(input: LeadInput): LeadSummary {
     huDueYear: huYear ?? null,
     huDueMonth: huMonth ?? null,
     serviceBook: input.serviceBook,
+    interior: input.interior,
+    lights: input.lights,
+    extras: input.extras,
     previousOwners: input.previousOwners,
     defects: input.defects,
     sellTiming: input.sellTiming,
     desiredPriceCents: input.desiredPrice === null ? null : input.desiredPrice * 100,
     plz: input.plz,
     city: input.city,
-    name: input.name,
+    name: `${input.firstName} ${input.lastName}`,
     phone: input.phone,
     email: input.email,
     contactMethod: input.contactMethod,

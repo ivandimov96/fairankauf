@@ -14,6 +14,14 @@ async function choose(scope: Page | Locator, name: string) {
   }).toPass();
 }
 
+/** Ticks a checkbox button (the box itself is visually hidden, the label is tapped). */
+async function tick(scope: Page | Locator, name: string) {
+  await expect(async () => {
+    await scope.getByText(name, { exact: true }).click();
+    await expect(scope.getByRole("checkbox", { name, exact: true })).toBeChecked({ timeout: 500 });
+  }).toPass();
+}
+
 test("seller submits a car and sees the thank-you page", async ({ page }) => {
   const phoneLocal = `0151 ${String(Date.now()).slice(-8)}`;
   await page.goto("/");
@@ -28,14 +36,21 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
 
   await page.getByRole("combobox", { name: "Marke" }).fill("volks");
   await page.getByRole("option", { name: "Volkswagen" }).click();
-  await page.getByLabel("Modell").fill("Golf 1.4 TSI");
+  // The model list follows the brand; "Golf" is there, anything else can be typed in.
+  await page.getByRole("combobox", { name: "Modell" }).fill("gol");
+  await expect(page.getByRole("option", { name: "Golf Variant" })).toBeVisible();
+  await page.getByRole("option", { name: "Golf", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Modell" })).toHaveValue("Golf");
   // The landing page stays mounted but hidden after client navigation, so target the form field by id.
   await expect(page.locator("#firstRegYear")).toHaveValue("2016");
   await page.getByLabel("Kilometerstand (km)").fill("123.000");
   await choose(page, "Benzin");
   await choose(page, "Manuell");
   await choose(page, "Allrad (4x4)");
+  await choose(page.getByRole("group", { name: "Türen" }), "5");
+  await page.getByLabel("Farbe").selectOption("Schwarz");
   await page.getByRole("textbox", { name: /^Leistung/ }).fill("125");
+  await page.getByLabel("Hubraum").selectOption("1,4 l");
   await page.getByRole("button", { name: "Weiter" }).click();
 
   // Step 2
@@ -44,12 +59,17 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await choose(page.getByRole("group", { name: "Unfallschaden" }), "Nein");
   await choose(page.getByRole("group", { name: "Ist das Auto fahrbereit?" }), "Ja");
   await choose(page.getByRole("group", { name: "Scheckheftgepflegt?" }), "Ja");
+  await choose(page.getByRole("group", { name: "Innenausstattung" }), "Leder");
+  await page.getByLabel("Scheinwerfer").selectOption("LED");
+  await tick(page.getByRole("group", { name: "Ausstattung" }), "Navigation");
+  await tick(page.getByRole("group", { name: "Ausstattung" }), "Sitzheizung");
   await page.getByLabel("Anzahl Vorbesitzer").fill("2");
 
   // Draft survives a reload.
   await page.reload();
   await expect(page.getByRole("heading", { name: "Zustand", exact: true })).toBeVisible();
   await expect(page.getByLabel("Anzahl Vorbesitzer")).toHaveValue("2");
+  await expect(page.getByRole("checkbox", { name: "Sitzheizung" })).toBeChecked();
   await page.getByRole("button", { name: "Weiter" }).click();
 
   // Step 3: timing, price and location
@@ -62,7 +82,8 @@ test("seller submits a car and sees the thank-you page", async ({ page }) => {
   await page.getByRole("button", { name: "Weiter" }).click();
 
   // Step 4: contact
-  await page.getByLabel("Name", { exact: true }).fill("Erika Musterfrau");
+  await page.getByLabel("Vorname").fill("Erika");
+  await page.getByLabel("Nachname").fill("Musterfrau");
   await page.getByLabel("Telefonnummer").fill(phoneLocal);
   await choose(page, "WhatsApp");
   await page.getByRole("button", { name: "Angebot anfordern" }).click();
@@ -85,10 +106,11 @@ test("a bot filling the hidden honeypot field is silently dropped", async ({ pag
         step: 3,
         values: {
           brand: "Audi", model: "A4", firstRegYear: "2015", firstRegMonth: "", mileageKm: "150000",
-          fuel: "DIESEL", gearbox: "MANUELL", drivetrain: "FRONT", power: "", powerUnit: "PS", bodyType: "",
-          condition: "GUT", accident: "NEIN", drivable: "JA", huDue: "", serviceBook: "JA",
-          previousOwners: "1", defects: "", sellTiming: "SOFORT", desiredPrice: "", plz: "10115", city: "Berlin",
-          name: "Bot", phone: "015112345678", email: "", contactMethod: "ANRUF", consent: true,
+          fuel: "DIESEL", gearbox: "MANUELL", drivetrain: "FRONT", doors: "5", color: "GRAU", power: "",
+          powerUnit: "PS", displacement: "", bodyType: "", condition: "GUT", accident: "NEIN", drivable: "JA",
+          huDue: "", serviceBook: "JA", interior: "STOFF", lights: "", extras: [], previousOwners: "1",
+          defects: "", sellTiming: "SOFORT", desiredPrice: "", plz: "10115", city: "Berlin",
+          firstName: "Bot", lastName: "Bot", phone: "015112345678", email: "", contactMethod: "ANRUF", consent: true,
         },
       }),
     ),
@@ -113,8 +135,37 @@ test("brands: the list includes newer brands, and any other brand can be typed i
   await page.getByRole("option", { name: "Zeekr" }).click();
   await expect(page.getByRole("combobox", { name: "Marke" })).toHaveValue("Zeekr");
 
-  // "Andere Marke" in the form switches to free text.
+  // "Andere Marke" in the form switches to free text, and so does the model.
   await page.getByRole("combobox", { name: "Marke" }).fill("xyz");
   await page.getByRole("option", { name: "Andere Marke (selbst eingeben)" }).click();
   await expect(page.locator("#brand")).toHaveValue("xyz");
+  await expect(page.getByRole("combobox", { name: "Modell" })).toHaveCount(0);
+  await page.getByLabel("Modell").fill("Spezial 2000");
+  await expect(page.locator("#model")).toHaveValue("Spezial 2000");
+});
+
+test("models: a listed brand offers its models, and changing the brand clears the model", async ({ page }) => {
+  await page.goto("/verkaufen");
+  await page.getByRole("combobox", { name: "Marke" }).fill("skoda");
+  await page.getByRole("option", { name: "Skoda" }).click();
+  await page.getByRole("combobox", { name: "Modell" }).fill("oct");
+  await page.getByRole("option", { name: "Octavia" }).click();
+  await expect(page.locator("#model")).toHaveValue("Octavia");
+
+  // A model that is not listed is typed in.
+  await page.getByRole("combobox", { name: "Modell" }).fill("Octavia Scout");
+  await page.getByRole("option", { name: "Anderes Modell (selbst eingeben)" }).click();
+  await expect(page.locator("#model")).toHaveValue("Octavia Scout");
+  await page.getByRole("button", { name: "Zurück zur Modellliste" }).click();
+  await expect(page.locator("#model")).toHaveValue("");
+
+  // Another brand: its own list, nothing left over.
+  await page.getByRole("combobox", { name: "Modell" }).fill("fab");
+  await page.getByRole("option", { name: "Fabia" }).click();
+  await page.getByRole("combobox", { name: "Marke" }).fill("seat");
+  await page.getByRole("option", { name: "Seat", exact: true }).click();
+  await expect(page.locator("#model")).toHaveValue("");
+  await page.getByRole("combobox", { name: "Modell" }).click();
+  await expect(page.getByRole("option", { name: "Ibiza" })).toBeVisible();
+  await expect(page.getByRole("option", { name: "Fabia" })).toHaveCount(0);
 });

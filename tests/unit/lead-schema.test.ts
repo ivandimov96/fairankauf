@@ -11,21 +11,27 @@ const valid: LeadFormValues = {
   fuel: "BENZIN",
   gearbox: "MANUELL",
   drivetrain: "ALLRAD",
+  doors: "5",
+  color: "GRAU",
   power: "150",
   powerUnit: "PS",
+  displacement: "",
   bodyType: "Kombi",
   condition: "GUT",
   accident: "NEIN",
   drivable: "JA",
   huDue: "2027-03",
   serviceBook: "TEILWEISE",
+  interior: "STOFF",
+  lights: "",
   previousOwners: "2",
   defects: "  Klimaanlage kühlt schwach ",
   sellTiming: "VIER_WOCHEN",
   desiredPrice: "9500",
   plz: "10115",
   city: "Berlin",
-  name: "Max Mustermann",
+  firstName: "Max",
+  lastName: "Mustermann",
   phone: "0151 23456789",
   email: "",
   contactMethod: "WHATSAPP",
@@ -91,6 +97,12 @@ describe("leadSchema", () => {
     [{ mileageKm: "viel" }, "mileageKm"],
     [{ huDue: "2027-13" }, "huDue"],
     [{ brand: "  " }, "brand"],
+    [{ doors: "6" as never }, "doors"],
+    [{ color: "" as never }, "color"],
+    [{ interior: undefined as never }, "interior"],
+    [{ extras: ["JACUZZI"] as never }, "extras"],
+    [{ firstName: "" }, "firstName"],
+    [{ lastName: " " }, "lastName"],
     [{ fuel: "KOHLE" as never }, "fuel"],
     [{ drivetrain: undefined as never }, "drivetrain"],
     [{ sellTiming: "" as never }, "sellTiming"],
@@ -121,6 +133,10 @@ describe("toLeadSummary", () => {
     expect(row).toMatchObject({
       powerKw: 110,
       drivetrain: "ALLRAD",
+      doors: "5",
+      color: "GRAU",
+      interior: "STOFF",
+      name: "Max Mustermann",
       sellTiming: "VIER_WOCHEN",
       desiredPriceCents: 950_000,
       huDueYear: 2027,
@@ -138,7 +154,17 @@ describe("toLeadSummary", () => {
       huDueYear: null,
       huDueMonth: null,
       desiredPriceCents: null,
+      displacement: null,
+      lights: null,
+      extras: [],
       drivable: false,
     });
+  });
+
+  it("passes the engine size, lights and extras through", () => {
+    const row = toLeadSummary(
+      leadSchema.parse({ ...valid, displacement: "2.0", lights: "XENON", extras: ["NAVI", "KAMERA"] }),
+    );
+    expect(row).toMatchObject({ displacement: "2.0", lights: "XENON", extras: ["NAVI", "KAMERA"] });
   });
 });

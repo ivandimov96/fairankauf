@@ -1,11 +1,17 @@
 import { formatEuro, formatNumber } from "@/lib/money";
 import {
   ACCIDENT,
+  COLORS,
   CONDITION,
   CONTACT_METHOD,
+  DISPLACEMENT,
+  DOORS,
   DRIVETRAIN,
+  EXTRAS,
   FUEL,
   GEARBOX,
+  INTERIOR,
+  LIGHTS,
   SELL_TIMING,
   SERVICE_BOOK,
   YES_NO,
@@ -25,7 +31,10 @@ export type LeadSummary = {
   fuel: keyof typeof FUEL;
   gearbox: keyof typeof GEARBOX;
   drivetrain: keyof typeof DRIVETRAIN;
+  doors: keyof typeof DOORS;
+  color: keyof typeof COLORS;
   powerKw: number | null;
+  displacement?: keyof typeof DISPLACEMENT | null;
   bodyType?: string | null;
   condition: keyof typeof CONDITION;
   accident: keyof typeof ACCIDENT;
@@ -33,6 +42,9 @@ export type LeadSummary = {
   huDueYear?: number | null;
   huDueMonth?: number | null;
   serviceBook?: keyof typeof SERVICE_BOOK;
+  interior?: keyof typeof INTERIOR;
+  lights?: keyof typeof LIGHTS | null;
+  extras?: (keyof typeof EXTRAS)[];
   previousOwners?: number;
   defects?: string | null;
   sellTiming: keyof typeof SELL_TIMING;
@@ -51,10 +63,14 @@ function firstReg(lead: LeadSummary) {
     : String(lead.firstRegYear);
 }
 
-/** "Karosserie: Kombi · HU: 03/2027 · Scheckheft: Ja · Vorbesitzer: 2", or "" when none is set. */
+/** "Karosserie: Kombi · Innen: Leder · HU: 03/2027 · …", or "" when none is set. */
 function details(lead: LeadSummary) {
   const parts: string[] = [];
   if (lead.bodyType) parts.push(`Karosserie: ${lead.bodyType}`);
+  if (lead.displacement) parts.push(`Hubraum: ${DISPLACEMENT[lead.displacement]}`);
+  if (lead.interior) parts.push(`Innen: ${INTERIOR[lead.interior]}`);
+  if (lead.lights) parts.push(`Licht: ${LIGHTS[lead.lights]}`);
+  if (lead.extras?.length) parts.push(`Extras: ${lead.extras.map((e) => EXTRAS[e]).join(", ")}`);
   if (lead.huDueYear && lead.huDueMonth) parts.push(`HU: ${String(lead.huDueMonth).padStart(2, "0")}/${lead.huDueYear}`);
   if (lead.serviceBook) parts.push(`Scheckheft: ${SERVICE_BOOK[lead.serviceBook]}`);
   if (lead.previousOwners !== undefined) parts.push(`Vorbesitzer: ${lead.previousOwners}`);
@@ -76,8 +92,13 @@ export function leadSubject(lead: LeadSummary): string {
  * four or more spaces in a row, or no text at all, so each one is a single
  * trimmed line and "–" when there is nothing to say.
  */
-export function formatTemplateParams(lead: LeadSummary): string[] {
+/** "Benzin · Manuell · Frontantrieb · 5 Türen · Schwarz · 92 kW" */
+function engine(lead: LeadSummary) {
   const power = lead.powerKw ? ` · ${lead.powerKw} kW` : "";
+  return `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]} · ${DRIVETRAIN[lead.drivetrain]} · ${DOORS[lead.doors]} Türen · ${COLORS[lead.color]}${power}`;
+}
+
+export function formatTemplateParams(lead: LeadSummary): string[] {
   const extras = [details(lead), lead.defects ? `Mängel: ${lead.defects}` : ""].filter(Boolean).join(" · ");
   const contact = [
     lead.name,
@@ -87,7 +108,7 @@ export function formatTemplateParams(lead: LeadSummary): string[] {
   return [
     `${lead.brand} ${lead.model}`,
     `EZ ${firstReg(lead)} · ${formatNumber(lead.mileageKm)} km`,
-    `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]} · ${DRIVETRAIN[lead.drivetrain]}${power}`,
+    engine(lead),
     `${CONDITION[lead.condition]} · Unfall: ${ACCIDENT[lead.accident]} · Fahrbereit: ${lead.drivable ? YES_NO.JA : YES_NO.NEIN}`,
     extras,
     price(lead),
@@ -107,11 +128,10 @@ function templateParam(value: string): string {
 
 /** The full lead as plain text, one field per line. */
 export function formatLeadMessage(lead: LeadSummary): string {
-  const power = lead.powerKw ? ` · ${lead.powerKw} kW` : "";
   const car = [
     `🚗 Neue Anfrage: ${lead.brand} ${lead.model}`,
     `EZ ${firstReg(lead)} · ${formatNumber(lead.mileageKm)} km`,
-    `${FUEL[lead.fuel]} · ${GEARBOX[lead.gearbox]} · ${DRIVETRAIN[lead.drivetrain]}${power}`,
+    engine(lead),
     `Zustand: ${CONDITION[lead.condition]} · Unfall: ${ACCIDENT[lead.accident]} · Fahrbereit: ${lead.drivable ? YES_NO.JA : YES_NO.NEIN}`,
     details(lead),
     lead.defects ? `Mängel: ${lead.defects}` : "",

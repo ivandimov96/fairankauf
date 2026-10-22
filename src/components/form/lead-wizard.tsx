@@ -18,10 +18,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { BrandPicker } from "@/components/form/brand-picker";
 import { clearDraft, loadDraft, saveDraft } from "@/components/form/draft";
+import { CheckGroup } from "@/components/form/check-group";
 import { ChoiceGroup } from "@/components/form/choice-group";
 import { Field, FieldErrors, describedBy } from "@/components/form/field";
+import { BRAND_LABELS, ListPicker, MODEL_LABELS } from "@/components/form/list-picker";
 import { LicensePlate } from "@/components/site/license-plate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,11 +33,18 @@ import { TURNSTILE_SITE_KEY, Turnstile } from "@/components/form/turnstile";
 import {
   ACCIDENT,
   BODY_TYPES,
+  BRANDS,
+  COLORS,
   CONDITION,
   CONTACT_METHOD,
+  DISPLACEMENT,
+  DOORS,
   DRIVETRAIN,
+  EXTRAS,
   FUEL,
   GEARBOX,
+  INTERIOR,
+  LIGHTS,
   MONTHS,
   POWER_UNIT,
   SELL_TIMING,
@@ -50,6 +58,7 @@ import {
   type LeadFormValues,
   type LeadInput,
 } from "@/lib/validation/lead";
+import { modelsFor } from "@/lib/models";
 import { formatNumber } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { submitLead } from "@/server/actions/submit-lead";
@@ -88,7 +97,8 @@ export function LeadWizard() {
     control,
     formState: { errors },
   } = form;
-  const err = (name: FieldPath<LeadFormValues>) => errors[name]?.message as string | undefined;
+  type FieldName = keyof LeadFormValues;
+  const err = (name: FieldName) => errors[name]?.message as string | undefined;
   /**
    * register() plus: a field that already shows an error is re-checked on every
    * change, so the message disappears as soon as the seller fixes it. Otherwise
@@ -173,6 +183,12 @@ export function LeadWizard() {
   const current = STEPS[step]!;
   const isLast = step === STEPS.length - 1;
   const contactMethod = useWatch({ control, name: "contactMethod" });
+  const brand = useWatch({ control, name: "brand" });
+  // The brand the model list belongs to. Typing in the brand box empties the
+  // brand until an entry is picked; the model keeps its list meanwhile.
+  const [modelBrand, setModelBrand] = React.useState(brand);
+  if (brand && brand !== modelBrand) setModelBrand(brand);
+  const models = React.useMemo(() => modelsFor(modelBrand), [modelBrand]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[17rem_1fr] lg:items-start lg:gap-6">
@@ -314,10 +330,14 @@ export function LeadWizard() {
                     control={control}
                     name="brand"
                     render={({ field }) => (
-                      <BrandPicker
+                      <ListPicker
                         id="brand"
+                        options={BRANDS}
+                        labels={BRAND_LABELS}
                         value={field.value}
                         onChange={(v) => {
+                          // A different brand clears the model; retyping the same one keeps it.
+                          if (v && v !== modelBrand && form.getValues("model")) form.setValue("model", "");
                           field.onChange(v);
                           if (err("brand")) void form.trigger("brand");
                         }}
@@ -328,15 +348,40 @@ export function LeadWizard() {
                     )}
                   />
                 </Field>
-                <Field id="model" label="Modell" hint="z. B. Golf 1.4 TSI" error={err("model")}>
-                  <Input
-                    id="model"
-                    autoComplete="off"
-                    aria-invalid={!!err("model")}
-                    aria-describedby={describedBy("model", err("model"), "hint")}
-                    {...reg("model")}
-                  />
-                </Field>
+                {models.length > 0 ? (
+                  <Field id="model" label="Modell" error={err("model")}>
+                    <Controller
+                      control={control}
+                      name="model"
+                      render={({ field }) => (
+                        <ListPicker
+                          key={modelBrand}
+                          id="model"
+                          options={models}
+                          labels={MODEL_LABELS}
+                          value={field.value}
+                          onChange={(v) => {
+                            field.onChange(v);
+                            if (err("model")) void form.trigger("model");
+                          }}
+                          onBlur={field.onBlur}
+                          error={err("model")}
+                          describedBy={describedBy("model", err("model"))}
+                        />
+                      )}
+                    />
+                  </Field>
+                ) : (
+                  <Field id="model" label="Modell" hint="z. B. Golf 1.4 TSI" error={err("model")}>
+                    <Input
+                      id="model"
+                      autoComplete="off"
+                      aria-invalid={!!err("model")}
+                      aria-describedby={describedBy("model", err("model"), "hint")}
+                      {...reg("model")}
+                    />
+                  </Field>
+                )}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -420,6 +465,32 @@ export function LeadWizard() {
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
+                <ChoiceGroup
+                  name="doors"
+                  legend="Türen"
+                  options={DOORS}
+                  columns="grid-cols-4"
+                  error={err("doors")}
+                  inputProps={reg("doors")}
+                />
+                <Field id="color" label="Farbe" error={err("color")}>
+                  <NativeSelect
+                    id="color"
+                    aria-invalid={!!err("color")}
+                    aria-describedby={describedBy("color", err("color"))}
+                    {...reg("color")}
+                  >
+                    <option value="">Bitte wählen</option>
+                    {Object.entries(COLORS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-3">
                 <Field id="power" label="Leistung" optional error={err("power")}>
                   <div className="grid grid-cols-[1fr_6rem] gap-2">
                     <Input
@@ -438,6 +509,16 @@ export function LeadWizard() {
                       ))}
                     </NativeSelect>
                   </div>
+                </Field>
+                <Field id="displacement" label="Hubraum" optional>
+                  <NativeSelect id="displacement" {...reg("displacement")}>
+                    <option value="">Bitte wählen</option>
+                    {Object.entries(DISPLACEMENT).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </NativeSelect>
                 </Field>
                 <Field id="bodyType" label="Karosserieform" optional>
                   <NativeSelect id="bodyType" {...reg("bodyType")}>
@@ -551,7 +632,33 @@ export function LeadWizard() {
                   inputProps={reg("serviceBook")}
                 />
               </div>
+              <ChoiceGroup
+                name="interior"
+                legend="Innenausstattung"
+                options={INTERIOR}
+                columns="grid-cols-3 sm:grid-cols-5"
+                error={err("interior")}
+                inputProps={reg("interior")}
+              />
+              <CheckGroup
+                name="extras"
+                legend="Ausstattung"
+                optional
+                options={EXTRAS}
+                columns="grid-cols-2 sm:grid-cols-4"
+                inputProps={reg("extras")}
+              />
               <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="lights" label="Scheinwerfer" optional>
+                  <NativeSelect id="lights" {...reg("lights")}>
+                    <option value="">Bitte wählen</option>
+                    {Object.entries(LIGHTS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
                 <Field id="previousOwners" label="Anzahl Vorbesitzer" error={err("previousOwners")}>
                   <Input
                     id="previousOwners"
@@ -562,23 +669,23 @@ export function LeadWizard() {
                     {...reg("previousOwners")}
                   />
                 </Field>
-                <Field
-                  id="defects"
-                  label="Bekannte Mängel"
-                  optional
-                  hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
-                  error={err("defects")}
-                >
-                  <Textarea
-                    id="defects"
-                    rows={2}
-                    className="min-h-11"
-                    aria-invalid={!!err("defects")}
-                    aria-describedby={describedBy("defects", err("defects"), "hint")}
-                    {...reg("defects")}
-                  />
-                </Field>
               </div>
+              <Field
+                id="defects"
+                label="Bekannte Mängel"
+                optional
+                hint="z. B. Kratzer hinten links, Klimaanlage kühlt nicht"
+                error={err("defects")}
+              >
+                <Textarea
+                  id="defects"
+                  rows={2}
+                  className="min-h-11"
+                  aria-invalid={!!err("defects")}
+                  aria-describedby={describedBy("defects", err("defects"), "hint")}
+                  {...reg("defects")}
+                />
+              </Field>
             </>
           )}
 
@@ -649,15 +756,26 @@ export function LeadWizard() {
             <>
               <CarSummary values={form.getValues()} />
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field id="name" label="Name" error={err("name")}>
+                <Field id="firstName" label="Vorname" error={err("firstName")}>
                   <Input
-                    id="name"
-                    autoComplete="name"
-                    aria-invalid={!!err("name")}
-                    aria-describedby={describedBy("name", err("name"))}
-                    {...reg("name")}
+                    id="firstName"
+                    autoComplete="given-name"
+                    aria-invalid={!!err("firstName")}
+                    aria-describedby={describedBy("firstName", err("firstName"))}
+                    {...reg("firstName")}
                   />
                 </Field>
+                <Field id="lastName" label="Nachname" error={err("lastName")}>
+                  <Input
+                    id="lastName"
+                    autoComplete="family-name"
+                    aria-invalid={!!err("lastName")}
+                    aria-describedby={describedBy("lastName", err("lastName"))}
+                    {...reg("lastName")}
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
                 <Field id="phone" label="Telefonnummer" hint="z. B. 0151 23456789" error={err("phone")}>
                   <Input
                     id="phone"
@@ -668,8 +786,6 @@ export function LeadWizard() {
                     {...reg("phone")}
                   />
                 </Field>
-              </div>
-              <div className="grid gap-5 sm:grid-cols-2">
                 <Field id="email" label="E-Mail" optional={contactMethod !== "EMAIL"} error={err("email")}>
                   <Input
                     id="email"
@@ -680,15 +796,15 @@ export function LeadWizard() {
                     {...reg("email")}
                   />
                 </Field>
-                <ChoiceGroup
-                  name="contactMethod"
-                  legend="Wie sollen wir Sie kontaktieren?"
-                  options={CONTACT_METHOD}
-                  columns="grid-cols-3"
-                  error={err("contactMethod")}
-                  inputProps={reg("contactMethod")}
-                />
               </div>
+              <ChoiceGroup
+                name="contactMethod"
+                legend="Wie sollen wir Sie kontaktieren?"
+                options={CONTACT_METHOD}
+                columns="grid-cols-3 sm:max-w-sm"
+                error={err("contactMethod")}
+                inputProps={reg("contactMethod")}
+              />
               <div className="grid gap-2">
                 <Label className="flex items-start gap-3 text-sm leading-relaxed font-normal">
                   <input

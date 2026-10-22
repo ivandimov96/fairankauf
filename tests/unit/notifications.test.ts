@@ -11,6 +11,8 @@ const lead: LeadSummary = {
   fuel: "BENZIN",
   gearbox: "MANUELL",
   drivetrain: "FRONT",
+  doors: "5",
+  color: "SCHWARZ",
   powerKw: 92,
   condition: "GUT",
   accident: "JA_REPARIERT",
@@ -30,7 +32,7 @@ describe("formatLeadMessage", () => {
       [
         "🚗 Neue Anfrage: Volkswagen Golf 1.4 TSI",
         "EZ 05/2016 · 123.000 km",
-        "Benzin · Manuell · Frontantrieb · 92 kW",
+        "Benzin · Manuell · Frontantrieb · 5 Türen · Schwarz · 92 kW",
         "Zustand: Gut · Unfall: Ja, repariert · Fahrbereit: Ja",
         "Preisvorstellung: 9.500\u00a0€",
         "Verkauf: So schnell wie möglich",
@@ -47,6 +49,10 @@ describe("formatLeadMessage", () => {
     const msg = formatLeadMessage({
       ...lead,
       bodyType: "Kombi",
+      displacement: "1.4",
+      interior: "LEDER",
+      lights: "LED",
+      extras: ["NAVI", "SITZHEIZUNG"],
       huDueYear: 2027,
       huDueMonth: 3,
       serviceBook: "TEILWEISE",
@@ -54,7 +60,9 @@ describe("formatLeadMessage", () => {
       defects: "Kratzer hinten links",
       email: "erika@example.de",
     });
-    expect(msg).toContain("Fahrbereit: Ja\nKarosserie: Kombi · HU: 03/2027 · Scheckheft: Teilweise · Vorbesitzer: 2\n");
+    expect(msg).toContain(
+      "Fahrbereit: Ja\nKarosserie: Kombi · Hubraum: 1,4 l · Innen: Leder · Licht: LED · Extras: Navigation, Sitzheizung · HU: 03/2027 · Scheckheft: Teilweise · Vorbesitzer: 2\n",
+    );
     expect(msg).toContain("Mängel: Kratzer hinten links\nPreisvorstellung");
     expect(msg).toContain("(bevorzugt: WhatsApp)\n✉️ erika@example.de\n💬");
   });
@@ -64,7 +72,7 @@ describe("formatLeadMessage", () => {
       { ...lead, firstRegMonth: null, powerKw: null, desiredPriceCents: null, drivable: false },
     );
     expect(msg).toContain("EZ 2016 · 123.000 km");
-    expect(msg).toContain("Benzin · Manuell · Frontantrieb\n");
+    expect(msg).toContain("Benzin · Manuell · Frontantrieb · 5 Türen · Schwarz\n");
     expect(msg).toContain("Preisvorstellung: keine Angabe");
     expect(msg).toContain("Fahrbereit: Nein");
   });
@@ -81,7 +89,7 @@ describe("formatTemplateParams", () => {
     expect(formatTemplateParams(lead)).toEqual([
       "Volkswagen Golf 1.4 TSI",
       "EZ 05/2016 · 123.000 km",
-      "Benzin · Manuell · Frontantrieb · 92 kW",
+      "Benzin · Manuell · Frontantrieb · 5 Türen · Schwarz · 92 kW",
       "Gut · Unfall: Ja, repariert · Fahrbereit: Ja",
       "–",
       "9.500 €",

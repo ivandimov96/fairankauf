@@ -13,6 +13,8 @@ const lead: LeadSummary = {
   fuel: "BENZIN",
   gearbox: "MANUELL",
   drivetrain: "FRONT",
+  doors: "5",
+  color: "SCHWARZ",
   powerKw: 92,
   condition: "GUT",
   accident: "NEIN",

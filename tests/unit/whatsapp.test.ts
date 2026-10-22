@@ -13,6 +13,8 @@ const lead: LeadSummary = {
   fuel: "DIESEL",
   gearbox: "AUTOMATIK",
   drivetrain: "ALLRAD",
+  doors: "5",
+  color: "SCHWARZ",
   powerKw: null,
   condition: "GUT",
   accident: "NEIN",
@@ -53,7 +55,7 @@ describe("sendLeadWhatsApp", () => {
     const params = body.template.components[0].parameters;
     expect(params).toHaveLength(9);
     expect(params[0]).toEqual({ type: "text", text: "Audi A4" });
-    expect(params[2]).toEqual({ type: "text", text: "Diesel · Automatik · Allrad (4x4)" });
+    expect(params[2]).toEqual({ type: "text", text: "Diesel · Automatik · Allrad (4x4) · 5 Türen · Schwarz" });
     expect(JSON.parse(fetchMock.mock.calls[1]![1].body).to).toBe("4915156041400");
   });
 
